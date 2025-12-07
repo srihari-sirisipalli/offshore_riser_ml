@@ -29,7 +29,7 @@ class ColoredFormatter(logging.Formatter):
         return super().format(record)
 
 class LoggingConfigurator:
-    """Configures system-wide logging."""
+    """Configures system-wide logging with Windows UTF-8 support."""
     
     def __init__(self, config: dict):
         self.config = config.get('logging', {})
@@ -37,30 +37,48 @@ class LoggingConfigurator:
         self.log_dir = Path("logs")
         
     def setup(self) -> None:
-        """Setup all loggers and handlers."""
+        """Setup all loggers and handlers with UTF-8 encoding for Windows."""
         self.log_dir.mkdir(exist_ok=True)
         root_logger = logging.getLogger()
         root_logger.setLevel(self.log_level)
         root_logger.handlers = []  # Clear existing
         
-        # Console Handler
+        # Console Handler with UTF-8 support for Windows
         if self.config.get('log_to_console', True):
+            # FIX: Reconfigure stdout to use UTF-8 on Windows
+            if sys.platform == 'win32':
+                try:
+                    # Try to reconfigure stdout to UTF-8
+                    sys.stdout.reconfigure(encoding='utf-8')
+                except AttributeError:
+                    # Python < 3.7 doesn't have reconfigure
+                    # We'll handle this in the formatter
+                    pass
+            
             console_handler = logging.StreamHandler(sys.stdout)
             console_handler.setLevel(self.log_level)
+            
             if self.config.get('colorful_console', True):
                 formatter = ColoredFormatter('[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
             else:
                 formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+            
             console_handler.setFormatter(formatter)
             root_logger.addHandler(console_handler)
             
-        # File Handler
+        # File Handler (always UTF-8)
         if self.config.get('log_to_file', True):
             self._add_file_handler(root_logger, "pipeline.log")
             
     def _add_file_handler(self, logger: logging.Logger, filename: str):
         file_path = self.log_dir / filename
-        handler = RotatingFileHandler(file_path, maxBytes=10*1024*1024, backupCount=5)
+        # FIX: Explicitly use UTF-8 encoding for file handler
+        handler = RotatingFileHandler(
+            file_path, 
+            maxBytes=10*1024*1024, 
+            backupCount=5,
+            encoding='utf-8'  # Ensure UTF-8 for file
+        )
         handler.setLevel(logging.DEBUG)
         formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] [%(name)s] [%(funcName)s] %(message)s')
         handler.setFormatter(formatter)

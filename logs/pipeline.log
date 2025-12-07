@@ -2831,3 +2831,1557 @@ KeyError: 'cv_mean_cmae'
 [2025-12-07 08:41:42,580] [[36mINFO[0m] [pipeline] [main] Final Report: results\10_REPORT\final_report.pdf
 [2025-12-07 08:41:42,580] [[36mINFO[0m] [pipeline] [main] Package:      results\11_REPRODUCIBILITY_PACKAGE
 [2025-12-07 08:41:42,580] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 08:57:25,378] [[36mINFO[0m] [pipeline] [main] Pipeline Started. Run ID: 20251207_085725
+[2025-12-07 08:57:25,379] [[36mINFO[0m] [pipeline] [main] ----------------------------------------
+[2025-12-07 08:57:25,379] [[36mINFO[0m] [pipeline] [main] Phase 2: Data Layer
+[2025-12-07 08:57:25,379] [[36mINFO[0m] [pipeline] [execute] Starting Data Manager execution...
+[2025-12-07 08:57:25,379] [[36mINFO[0m] [pipeline] [load_data] Loading data from data/raw/Feature_Extraction_156_best_math_transformed_SignSafe.xlsx
+[2025-12-07 08:57:29,341] [[36mINFO[0m] [pipeline] [load_data] Loaded 3888 rows, 169 columns
+[2025-12-07 08:57:29,342] [[36mINFO[0m] [pipeline] [validate_columns] Required columns validated successfully.
+[2025-12-07 08:57:29,378] [[36mINFO[0m] [pipeline] [validate_circle_constraint] Circle Check: GOOD=3888, WARNING=0, BAD=0
+[2025-12-07 08:57:29,607] [[36mINFO[0m] [pipeline] [compute_derived_columns] Derived columns computed. Unique combined bins: 384
+[2025-12-07 08:57:29,900] [[36mINFO[0m] [pipeline] [generate_reports] Distribution plots generated.
+[2025-12-07 08:57:36,576] [[36mINFO[0m] [pipeline] [execute] Saved validated data to results\01_DATA_VALIDATION\validated_data.xlsx
+[2025-12-07 08:57:36,604] [[36mINFO[0m] [pipeline] [execute] Starting Split Engine execution...
+[2025-12-07 08:57:36,605] [[36mINFO[0m] [pipeline] [_determine_stratification_strategy] Bin Analysis (combined_bin): 0 bins have < 2 samples (0.0%)
+[2025-12-07 08:57:36,605] [[36mINFO[0m] [pipeline] [_determine_stratification_strategy] Using 'combined_bin' for stratification.
+[2025-12-07 08:57:43,351] [[36mINFO[0m] [pipeline] [execute] Splits saved: Train=3110, Val=389, Test=389
+[2025-12-07 08:57:43,351] [[36mINFO[0m] [pipeline] [main] ----------------------------------------
+[2025-12-07 08:57:43,351] [[36mINFO[0m] [pipeline] [main] Phase 3: Model Development
+[2025-12-07 08:57:43,352] [[36mINFO[0m] [pipeline] [execute] Starting Hyperparameter Optimization (HPO)...
+[2025-12-07 08:57:43,424] [[36mINFO[0m] [pipeline] [_load_progress] Resumed HPO: 1156 configs already completed.
+[2025-12-07 08:57:43,426] [[36mINFO[0m] [pipeline] [execute] Expanding grid for ExtraTreesRegressor...
+[2025-12-07 08:57:43,432] [[36mINFO[0m] [pipeline] [execute] Expanding grid for KNeighborsRegressor...
+[2025-12-07 08:57:44,826] [[36mINFO[0m] [pipeline] [_finalize_results] Saved comprehensive results to results\04_HYPERPARAMETER_SEARCH\all_config_results.xlsx
+[2025-12-07 08:57:44,831] [[36mINFO[0m] [pipeline] [train] Starting Final Model Training...
+[2025-12-07 08:57:44,833] [[36mINFO[0m] [pipeline] [train] Training ExtraTreesRegressor on 3110 samples with 167 features.
+[2025-12-07 08:57:49,475] [[36mINFO[0m] [pipeline] [train] Training completed in 4.64 seconds.
+[2025-12-07 08:57:49,751] [[36mINFO[0m] [pipeline] [train] Model saved to results\05_FINAL_MODEL\final_model.pkl
+[2025-12-07 08:57:49,752] [[36mINFO[0m] [pipeline] [predict] Generating predictions for val set (389 samples)...
+[2025-12-07 08:57:49,921] [[36mINFO[0m] [pipeline] [predict] Predictions saved to results\06_PREDICTIONS\predictions_val.xlsx
+[2025-12-07 08:57:49,921] [[36mINFO[0m] [pipeline] [predict] Generating predictions for test set (389 samples)...
+[2025-12-07 08:57:50,084] [[36mINFO[0m] [pipeline] [predict] Predictions saved to results\06_PREDICTIONS\predictions_test.xlsx
+[2025-12-07 08:57:50,084] [[36mINFO[0m] [pipeline] [main] ----------------------------------------
+[2025-12-07 08:57:50,084] [[36mINFO[0m] [pipeline] [main] Phase 4: Hyperparameter Analysis
+[2025-12-07 08:57:50,085] [[36mINFO[0m] [pipeline] [analyze] Starting Hyperparameter Landscape Analysis...
+[2025-12-07 08:57:50,789] [[36mINFO[0m] [pipeline] [analyze] Using 'cv_cmae_deg_mean' as the primary metric for the optimal range report.
+[2025-12-07 08:57:50,790] [[36mINFO[0m] [pipeline] [analyze] Found metrics for analysis: ['cv_cmae_deg_mean', 'cv_crmse_deg_mean', 'cv_max_error_deg_mean']
+[2025-12-07 08:57:50,826] [[36mINFO[0m] [pipeline] [_generate_optimal_ranges_report] Generated Optimal Ranges Report based on cv_cmae_deg_mean.
+[2025-12-07 08:57:50,997] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: ExtraTreesRegressor_cv_cmae_deg_mean_bootstrap_vs_criterion_heatmap.png
+[2025-12-07 08:57:51,185] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: ExtraTreesRegressor_cv_crmse_deg_mean_bootstrap_vs_criterion_heatmap.png
+[2025-12-07 08:57:51,370] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: ExtraTreesRegressor_cv_max_error_deg_mean_bootstrap_vs_criterion_heatmap.png
+[2025-12-07 08:57:51,553] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: ExtraTreesRegressor_cv_cmae_deg_mean_bootstrap_vs_max_depth_heatmap.png
+[2025-12-07 08:57:51,735] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: ExtraTreesRegressor_cv_crmse_deg_mean_bootstrap_vs_max_depth_heatmap.png
+[2025-12-07 08:57:51,932] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: ExtraTreesRegressor_cv_max_error_deg_mean_bootstrap_vs_max_depth_heatmap.png
+[2025-12-07 08:57:52,120] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: ExtraTreesRegressor_cv_cmae_deg_mean_bootstrap_vs_max_features_heatmap.png
+[2025-12-07 08:57:52,294] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: ExtraTreesRegressor_cv_crmse_deg_mean_bootstrap_vs_max_features_heatmap.png
+[2025-12-07 08:57:52,476] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: ExtraTreesRegressor_cv_max_error_deg_mean_bootstrap_vs_max_features_heatmap.png
+[2025-12-07 08:57:52,657] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: ExtraTreesRegressor_cv_cmae_deg_mean_bootstrap_vs_min_samples_leaf_heatmap.png
+[2025-12-07 08:57:52,837] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: ExtraTreesRegressor_cv_crmse_deg_mean_bootstrap_vs_min_samples_leaf_heatmap.png
+[2025-12-07 08:57:53,034] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: ExtraTreesRegressor_cv_max_error_deg_mean_bootstrap_vs_min_samples_leaf_heatmap.png
+[2025-12-07 08:57:53,223] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: ExtraTreesRegressor_cv_cmae_deg_mean_bootstrap_vs_min_samples_split_heatmap.png
+[2025-12-07 08:57:53,404] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: ExtraTreesRegressor_cv_crmse_deg_mean_bootstrap_vs_min_samples_split_heatmap.png
+[2025-12-07 08:57:53,594] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: ExtraTreesRegressor_cv_max_error_deg_mean_bootstrap_vs_min_samples_split_heatmap.png
+[2025-12-07 08:57:53,773] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: KNeighborsRegressor_cv_cmae_deg_mean_bootstrap_vs_criterion_heatmap.png
+[2025-12-07 08:57:53,936] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: KNeighborsRegressor_cv_crmse_deg_mean_bootstrap_vs_criterion_heatmap.png
+[2025-12-07 08:57:54,107] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: KNeighborsRegressor_cv_max_error_deg_mean_bootstrap_vs_criterion_heatmap.png
+[2025-12-07 08:57:54,279] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: KNeighborsRegressor_cv_cmae_deg_mean_bootstrap_vs_max_depth_heatmap.png
+[2025-12-07 08:57:54,437] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: KNeighborsRegressor_cv_crmse_deg_mean_bootstrap_vs_max_depth_heatmap.png
+[2025-12-07 08:57:54,611] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: KNeighborsRegressor_cv_max_error_deg_mean_bootstrap_vs_max_depth_heatmap.png
+[2025-12-07 08:57:54,941] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: KNeighborsRegressor_cv_cmae_deg_mean_bootstrap_vs_max_features_heatmap.png
+[2025-12-07 08:57:55,100] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: KNeighborsRegressor_cv_crmse_deg_mean_bootstrap_vs_max_features_heatmap.png
+[2025-12-07 08:57:55,267] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: KNeighborsRegressor_cv_max_error_deg_mean_bootstrap_vs_max_features_heatmap.png
+[2025-12-07 08:57:55,439] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: KNeighborsRegressor_cv_cmae_deg_mean_bootstrap_vs_min_samples_leaf_heatmap.png
+[2025-12-07 08:57:55,602] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: KNeighborsRegressor_cv_crmse_deg_mean_bootstrap_vs_min_samples_leaf_heatmap.png
+[2025-12-07 08:57:55,772] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: KNeighborsRegressor_cv_max_error_deg_mean_bootstrap_vs_min_samples_leaf_heatmap.png
+[2025-12-07 08:57:55,945] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: KNeighborsRegressor_cv_cmae_deg_mean_bootstrap_vs_min_samples_split_heatmap.png
+[2025-12-07 08:57:56,107] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: KNeighborsRegressor_cv_crmse_deg_mean_bootstrap_vs_min_samples_split_heatmap.png
+[2025-12-07 08:57:56,278] [[36mINFO[0m] [pipeline] [_plot_heatmap] Generated Heatmap plot: KNeighborsRegressor_cv_max_error_deg_mean_bootstrap_vs_min_samples_split_heatmap.png
+[2025-12-07 08:57:56,278] [[36mINFO[0m] [pipeline] [analyze] HPO Analysis complete. Artifacts in results\04_HYPERPARAMETER_SEARCH\ANALYSIS
+[2025-12-07 08:57:56,297] [[36mINFO[0m] [pipeline] [main] ----------------------------------------
+[2025-12-07 08:57:56,298] [[36mINFO[0m] [pipeline] [main] Phase 5: Evaluation & Diagnostics
+[2025-12-07 08:57:56,298] [[36mINFO[0m] [pipeline] [evaluate] Starting Evaluation for val set...
+[2025-12-07 08:57:56,360] [[36mINFO[0m] [pipeline] [evaluate] Evaluation complete. val CMAE: 0.9533�
+[2025-12-07 08:57:56,360] [[36mINFO[0m] [pipeline] [evaluate] Starting Evaluation for test set...
+[2025-12-07 08:57:56,424] [[36mINFO[0m] [pipeline] [evaluate] Evaluation complete. test CMAE: 1.4820�
+[2025-12-07 08:57:56,424] [[36mINFO[0m] [pipeline] [generate_all] Generating diagnostics for test set...
+[2025-12-07 08:57:58,022] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-07 08:57:58,027] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-07 08:57:58,220] [[36mINFO[0m] [pipeline] [generate_all] Diagnostics generation complete for test.
+[2025-12-07 08:57:58,220] [[36mINFO[0m] [pipeline] [generate_all] Generating diagnostics for val set...
+[2025-12-07 08:57:59,871] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-07 08:57:59,875] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-07 08:58:00,080] [[36mINFO[0m] [pipeline] [generate_all] Diagnostics generation complete for val.
+[2025-12-07 08:58:00,080] [[36mINFO[0m] [pipeline] [main] ----------------------------------------
+[2025-12-07 08:58:00,080] [[36mINFO[0m] [pipeline] [main] Phase 6: Error Analysis
+[2025-12-07 08:58:00,080] [[36mINFO[0m] [pipeline] [analyze] Starting Error Analysis for test set...
+[2025-12-07 08:58:00,199] [[36mINFO[0m] [pipeline] [_detect_outliers] Detected 4 statistical outliers using 3sigma.
+[2025-12-07 08:58:00,274] [[36mINFO[0m] [pipeline] [analyze] Error Analysis complete for test.
+[2025-12-07 08:58:00,274] [[36mINFO[0m] [pipeline] [analyze] Starting Error Analysis for val set...
+[2025-12-07 08:58:00,397] [[36mINFO[0m] [pipeline] [_detect_outliers] Detected 2 statistical outliers using 3sigma.
+[2025-12-07 08:58:00,472] [[36mINFO[0m] [pipeline] [analyze] Error Analysis complete for val.
+[2025-12-07 08:58:00,472] [[36mINFO[0m] [pipeline] [main] ----------------------------------------
+[2025-12-07 08:58:00,473] [[36mINFO[0m] [pipeline] [main] Phase 7: Advanced Analytics
+[2025-12-07 08:58:00,473] [[36mINFO[0m] [pipeline] [bootstrap] Bootstrapping disabled in config.
+[2025-12-07 08:58:00,473] [[36mINFO[0m] [pipeline] [ensemble] Ensembling disabled in config.
+[2025-12-07 08:58:00,473] [[36mINFO[0m] [pipeline] [run_stability_analysis] Stability Analysis disabled in config.
+[2025-12-07 08:58:00,474] [[36mINFO[0m] [pipeline] [main] ----------------------------------------
+[2025-12-07 08:58:00,474] [[36mINFO[0m] [pipeline] [main] Phase 8: Output Layer
+[2025-12-07 08:58:00,749] [[36mINFO[0m] [pipeline] [generate_report] Report generated successfully: results\10_REPORT\final_report.pdf
+[2025-12-07 08:58:00,749] [[36mINFO[0m] [pipeline] [package] Creating Reproducibility Package...
+[2025-12-07 08:58:01,523] [[36mINFO[0m] [pipeline] [package] Reproducibility Package successfully created at: C:\Users\Sri\Projects\offshore_riser_ml\results\11_REPRODUCIBILITY_PACKAGE
+[2025-12-07 08:58:01,523] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 08:58:01,524] [[36mINFO[0m] [pipeline] [main] PIPELINE COMPLETED SUCCESSFULLY
+[2025-12-07 08:58:01,524] [[36mINFO[0m] [pipeline] [main] Final Report: results\10_REPORT\final_report.pdf
+[2025-12-07 08:58:01,524] [[36mINFO[0m] [pipeline] [main] Package:      results\11_REPRODUCIBILITY_PACKAGE
+[2025-12-07 08:58:01,524] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:14:47,750] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:14:47,750] [[36mINFO[0m] [pipeline] [main] PHASE 1: FOUNDATION
+[2025-12-07 09:14:47,751] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:14:47,751] [[36mINFO[0m] [pipeline] [main] Run ID: 20251207_091447
+[2025-12-07 09:14:47,751] [[36mINFO[0m] [pipeline] [main] Results Directory: C:\Users\Sri\Projects\offshore_riser_ml\results
+[2025-12-07 09:14:47,751] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-07 09:14:47,751] [[36mINFO[0m] [pipeline] [main] PHASE 2: DATA PREPARATION
+[2025-12-07 09:14:47,751] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:14:47,752] [[36mINFO[0m] [pipeline] [execute] Starting Data Manager execution...
+[2025-12-07 09:14:47,752] [[36mINFO[0m] [pipeline] [load_data] Loading data from data/raw/Feature_Extraction_156_best_math_transformed_SignSafe.xlsx
+[2025-12-07 09:14:51,821] [[36mINFO[0m] [pipeline] [load_data] Loaded 3888 rows, 169 columns
+[2025-12-07 09:14:51,821] [[36mINFO[0m] [pipeline] [validate_columns] Required columns validated successfully.
+[2025-12-07 09:14:51,858] [[36mINFO[0m] [pipeline] [validate_circle_constraint] Circle Check: GOOD=3888, WARNING=0, BAD=0
+[2025-12-07 09:14:52,089] [[36mINFO[0m] [pipeline] [compute_derived_columns] Derived columns computed. Unique combined bins: 384
+[2025-12-07 09:14:52,380] [[36mINFO[0m] [pipeline] [generate_reports] Distribution plots generated.
+[2025-12-07 09:14:59,333] [[36mINFO[0m] [pipeline] [execute] Saved validated data to results\01_DATA_VALIDATION\validated_data.xlsx
+[2025-12-07 09:14:59,392] [[36mINFO[0m] [pipeline] [execute] Starting Split Engine execution...
+[2025-12-07 09:14:59,394] [[36mINFO[0m] [pipeline] [_determine_stratification_strategy] Bin Analysis (combined_bin): 0 bins have < 2 samples (0.0%)
+[2025-12-07 09:14:59,394] [[36mINFO[0m] [pipeline] [_determine_stratification_strategy] Using 'combined_bin' for stratification.
+[2025-12-07 09:15:06,671] [[36mINFO[0m] [pipeline] [execute] Splits saved: Train=3110, Val=389, Test=389
+[2025-12-07 09:15:06,673] [[36mINFO[0m] [pipeline] [execute] ============================================================
+[2025-12-07 09:15:06,674] [[36mINFO[0m] [pipeline] [execute] PHASE 3: HYPERPARAMETER OPTIMIZATION
+[2025-12-07 09:15:06,674] [[36mINFO[0m] [pipeline] [execute] ============================================================
+[2025-12-07 09:15:06,677] [[36mINFO[0m] [pipeline] [execute] Total configurations to evaluate: 1156
+[2025-12-07 09:15:06,680] [[36mINFO[0m] [pipeline] [execute] Model: ExtraTreesRegressor
+[2025-12-07 09:15:06,683] [[36mINFO[0m] [pipeline] [execute] Configurations for ExtraTreesRegressor: 1152
+[2025-12-07 09:15:12,995] [[36mINFO[0m] [pipeline] [execute]   [1/1152] CMAE: 1.4425� | Config: {'bootstrap': False, 'criterion': 'squared_error', 'max_depth': None, 'max_features': 1.0, 'min_samples_leaf': 1, 'min_samples_split': 2, 'n_estimators': 100}
+[2025-12-07 09:16:11,296] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:16:11,297] [[36mINFO[0m] [pipeline] [main] PHASE 1: FOUNDATION
+[2025-12-07 09:16:11,297] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:16:11,297] [[36mINFO[0m] [pipeline] [main] Run ID: 20251207_091611
+[2025-12-07 09:16:11,297] [[36mINFO[0m] [pipeline] [main] Results Directory: C:\Users\Sri\Projects\offshore_riser_ml\results
+[2025-12-07 09:16:11,297] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-07 09:16:11,298] [[36mINFO[0m] [pipeline] [main] PHASE 2: DATA PREPARATION
+[2025-12-07 09:16:11,298] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:16:11,298] [[36mINFO[0m] [pipeline] [execute] Starting Data Manager execution...
+[2025-12-07 09:16:11,298] [[36mINFO[0m] [pipeline] [load_data] Loading data from data/raw/Feature_Extraction_156_best_math_transformed_SignSafe.xlsx
+[2025-12-07 09:16:15,578] [[36mINFO[0m] [pipeline] [load_data] Loaded 3888 rows, 169 columns
+[2025-12-07 09:16:15,579] [[36mINFO[0m] [pipeline] [validate_columns] Required columns validated successfully.
+[2025-12-07 09:16:15,617] [[36mINFO[0m] [pipeline] [validate_circle_constraint] Circle Check: GOOD=3888, WARNING=0, BAD=0
+[2025-12-07 09:16:15,846] [[36mINFO[0m] [pipeline] [compute_derived_columns] Derived columns computed. Unique combined bins: 384
+[2025-12-07 09:16:16,135] [[36mINFO[0m] [pipeline] [generate_reports] Distribution plots generated.
+[2025-12-07 09:16:23,914] [[36mINFO[0m] [pipeline] [execute] Saved validated data to results\01_DATA_VALIDATION\validated_data.xlsx
+[2025-12-07 09:16:23,949] [[36mINFO[0m] [pipeline] [execute] Starting Split Engine execution...
+[2025-12-07 09:16:23,950] [[36mINFO[0m] [pipeline] [_determine_stratification_strategy] Bin Analysis (combined_bin): 0 bins have < 2 samples (0.0%)
+[2025-12-07 09:16:23,950] [[36mINFO[0m] [pipeline] [_determine_stratification_strategy] Using 'combined_bin' for stratification.
+[2025-12-07 09:16:30,999] [[36mINFO[0m] [pipeline] [execute] Splits saved: Train=3110, Val=389, Test=389
+[2025-12-07 09:16:31,001] [[36mINFO[0m] [pipeline] [execute] ============================================================
+[2025-12-07 09:16:31,001] [[36mINFO[0m] [pipeline] [execute] PHASE 3: HYPERPARAMETER OPTIMIZATION
+[2025-12-07 09:16:31,001] [[36mINFO[0m] [pipeline] [execute] ============================================================
+[2025-12-07 09:16:31,022] [[36mINFO[0m] [pipeline] [_load_progress] Resumed HPO: 1 configs already completed.
+[2025-12-07 09:16:31,025] [[36mINFO[0m] [pipeline] [execute] Total configurations to evaluate: 1156
+[2025-12-07 09:16:31,028] [[36mINFO[0m] [pipeline] [execute] Model: ExtraTreesRegressor
+[2025-12-07 09:16:31,031] [[36mINFO[0m] [pipeline] [execute] Configurations for ExtraTreesRegressor: 1152
+[2025-12-07 09:16:44,513] [[36mINFO[0m] [pipeline] [execute]   [2/1152] CMAE: 1.3228� | Config: {'bootstrap': False, 'criterion': 'squared_error', 'max_depth': None, 'max_features': 1.0, 'min_samples_leaf': 1, 'min_samples_split': 2, 'n_estimators': 300}
+[2025-12-07 09:17:08,926] [[36mINFO[0m] [pipeline] [execute]   [3/1152] CMAE: 1.3887� | Config: {'bootstrap': False, 'criterion': 'squared_error', 'max_depth': None, 'max_features': 1.0, 'min_samples_leaf': 1, 'min_samples_split': 2, 'n_estimators': 600}
+[2025-12-07 09:31:57,685] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:31:57,686] [[36mINFO[0m] [pipeline] [main] PHASE 1: FOUNDATION
+[2025-12-07 09:31:57,686] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:31:57,686] [[36mINFO[0m] [pipeline] [main] Run ID: 20251207_093157
+[2025-12-07 09:31:57,686] [[36mINFO[0m] [pipeline] [main] Results Directory: C:\Users\Sri\Projects\offshore_riser_ml\results
+[2025-12-07 09:31:57,687] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-07 09:31:57,687] [[36mINFO[0m] [pipeline] [main] PHASE 2: DATA PREPARATION
+[2025-12-07 09:31:57,687] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:31:57,687] [[36mINFO[0m] [pipeline] [execute] Starting Data Manager execution...
+[2025-12-07 09:31:57,687] [[36mINFO[0m] [pipeline] [load_data] Loading data from data/raw/Feature_Extraction_156_best_math_transformed_SignSafe.xlsx
+[2025-12-07 09:32:01,577] [[36mINFO[0m] [pipeline] [load_data] Loaded 3888 rows, 169 columns
+[2025-12-07 09:32:01,577] [[36mINFO[0m] [pipeline] [validate_columns] Required columns validated successfully.
+[2025-12-07 09:32:01,613] [[36mINFO[0m] [pipeline] [validate_circle_constraint] Circle Check: GOOD=3888, WARNING=0, BAD=0
+[2025-12-07 09:32:01,842] [[36mINFO[0m] [pipeline] [compute_derived_columns] Derived columns computed. Unique combined bins: 384
+[2025-12-07 09:32:02,112] [[36mINFO[0m] [pipeline] [generate_reports] Distribution plots generated.
+[2025-12-07 09:32:08,455] [[36mINFO[0m] [pipeline] [execute] Saved validated data to results\01_DATA_VALIDATION\validated_data.xlsx
+[2025-12-07 09:32:08,492] [[36mINFO[0m] [pipeline] [main] [OK] Data validated: 3888 samples
+[2025-12-07 09:32:08,492] [[36mINFO[0m] [pipeline] [execute] Starting Split Engine execution...
+[2025-12-07 09:32:08,493] [[36mINFO[0m] [pipeline] [_determine_stratification_strategy] Bin Analysis (combined_bin): 0 bins have < 2 samples (0.0%)
+[2025-12-07 09:32:08,493] [[36mINFO[0m] [pipeline] [_determine_stratification_strategy] Using 'combined_bin' for stratification.
+[2025-12-07 09:32:15,330] [[36mINFO[0m] [pipeline] [execute] Splits saved: Train=3110, Val=389, Test=389
+[2025-12-07 09:32:15,330] [[36mINFO[0m] [pipeline] [main] [OK] Data split: Train=3110, Val=389, Test=389
+[2025-12-07 09:32:15,331] [[36mINFO[0m] [pipeline] [execute] ============================================================
+[2025-12-07 09:32:15,331] [[36mINFO[0m] [pipeline] [execute] PHASE 3: HYPERPARAMETER OPTIMIZATION
+[2025-12-07 09:32:15,331] [[36mINFO[0m] [pipeline] [execute] ============================================================
+[2025-12-07 09:32:15,344] [[36mINFO[0m] [pipeline] [_load_progress] Resumed HPO: 3 configs already completed.
+[2025-12-07 09:32:15,346] [[36mINFO[0m] [pipeline] [execute] Total configurations to evaluate: 1156
+[2025-12-07 09:32:15,346] [[36mINFO[0m] [pipeline] [execute] 
+────────────────────────────────────────────────────────────
+[2025-12-07 09:32:15,347] [[36mINFO[0m] [pipeline] [execute] Model: ExtraTreesRegressor
+[2025-12-07 09:32:15,347] [[36mINFO[0m] [pipeline] [execute] ────────────────────────────────────────────────────────────
+[2025-12-07 09:32:15,347] [[36mINFO[0m] [pipeline] [execute] Configurations for ExtraTreesRegressor: 1152
+[2025-12-07 09:32:52,675] [[36mINFO[0m] [pipeline] [execute]   [4/1152] CMAE: 1.3531° | Config: {'bootstrap': False, 'criterion': 'squared_error', 'max_depth': None, 'max_features': 1.0, 'min_samples_leaf': 1, 'min_samples_split': 2, 'n_estimators': 1000}
+[2025-12-07 09:32:58,862] [[36mINFO[0m] [pipeline] [execute]   [5/1152] CMAE: 1.4484° | Config: {'bootstrap': False, 'criterion': 'squared_error', 'max_depth': None, 'max_features': 1.0, 'min_samples_leaf': 1, 'min_samples_split': 5, 'n_estimators': 100}
+[2025-12-07 09:33:11,415] [[36mINFO[0m] [pipeline] [execute]   [6/1152] CMAE: 1.4314° | Config: {'bootstrap': False, 'criterion': 'squared_error', 'max_depth': None, 'max_features': 1.0, 'min_samples_leaf': 1, 'min_samples_split': 5, 'n_estimators': 300}
+[2025-12-07 09:33:33,389] [[36mINFO[0m] [pipeline] [execute]   [7/1152] CMAE: 1.4457° | Config: {'bootstrap': False, 'criterion': 'squared_error', 'max_depth': None, 'max_features': 1.0, 'min_samples_leaf': 1, 'min_samples_split': 5, 'n_estimators': 600}
+[2025-12-07 09:34:00,733] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:34:00,734] [[36mINFO[0m] [pipeline] [main] PHASE 1: FOUNDATION
+[2025-12-07 09:34:00,734] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:34:00,734] [[36mINFO[0m] [pipeline] [main] Run ID: 20251207_093400
+[2025-12-07 09:34:00,734] [[36mINFO[0m] [pipeline] [main] Results Directory: C:\Users\Sri\Projects\offshore_riser_ml\results
+[2025-12-07 09:34:00,734] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-07 09:34:00,735] [[36mINFO[0m] [pipeline] [main] PHASE 2: DATA PREPARATION
+[2025-12-07 09:34:00,735] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:34:00,735] [[36mINFO[0m] [pipeline] [execute] Starting Data Manager execution...
+[2025-12-07 09:34:00,735] [[36mINFO[0m] [pipeline] [load_data] Loading data from data/raw/Feature_Extraction_156_best_math_transformed_SignSafe.xlsx
+[2025-12-07 09:34:05,198] [[36mINFO[0m] [pipeline] [load_data] Loaded 3888 rows, 169 columns
+[2025-12-07 09:34:05,198] [[36mINFO[0m] [pipeline] [validate_columns] Required columns validated successfully.
+[2025-12-07 09:34:05,241] [[36mINFO[0m] [pipeline] [validate_circle_constraint] Circle Check: GOOD=3888, WARNING=0, BAD=0
+[2025-12-07 09:34:05,475] [[36mINFO[0m] [pipeline] [compute_derived_columns] Derived columns computed. Unique combined bins: 384
+[2025-12-07 09:34:05,767] [[36mINFO[0m] [pipeline] [generate_reports] Distribution plots generated.
+[2025-12-07 09:34:12,583] [[36mINFO[0m] [pipeline] [execute] Saved validated data to results\01_DATA_VALIDATION\validated_data.xlsx
+[2025-12-07 09:34:12,618] [[36mINFO[0m] [pipeline] [main] [OK] Data validated: 3888 samples
+[2025-12-07 09:34:12,619] [[36mINFO[0m] [pipeline] [execute] Starting Split Engine execution...
+[2025-12-07 09:34:12,619] [[36mINFO[0m] [pipeline] [_determine_stratification_strategy] Bin Analysis (combined_bin): 0 bins have < 2 samples (0.0%)
+[2025-12-07 09:34:12,620] [[36mINFO[0m] [pipeline] [_determine_stratification_strategy] Using 'combined_bin' for stratification.
+[2025-12-07 09:34:19,801] [[36mINFO[0m] [pipeline] [execute] Splits saved: Train=3110, Val=389, Test=389
+[2025-12-07 09:34:19,801] [[36mINFO[0m] [pipeline] [main] [OK] Data split: Train=3110, Val=389, Test=389
+[2025-12-07 09:34:19,801] [[36mINFO[0m] [pipeline] [execute] ============================================================
+[2025-12-07 09:34:19,802] [[36mINFO[0m] [pipeline] [execute] PHASE 3: HYPERPARAMETER OPTIMIZATION
+[2025-12-07 09:34:19,802] [[36mINFO[0m] [pipeline] [execute] ============================================================
+[2025-12-07 09:34:19,886] [[36mINFO[0m] [pipeline] [_load_progress] Resumed HPO: 1156 configs already completed.
+[2025-12-07 09:34:19,888] [[36mINFO[0m] [pipeline] [execute] Total configurations to evaluate: 1156
+[2025-12-07 09:34:19,888] [[36mINFO[0m] [pipeline] [execute] 
+────────────────────────────────────────────────────────────
+[2025-12-07 09:34:19,889] [[36mINFO[0m] [pipeline] [execute] Model: ExtraTreesRegressor
+[2025-12-07 09:34:19,889] [[36mINFO[0m] [pipeline] [execute] ────────────────────────────────────────────────────────────
+[2025-12-07 09:34:19,890] [[36mINFO[0m] [pipeline] [execute] Configurations for ExtraTreesRegressor: 1152
+[2025-12-07 09:34:19,896] [[36mINFO[0m] [pipeline] [execute] 
+────────────────────────────────────────────────────────────
+[2025-12-07 09:34:19,896] [[36mINFO[0m] [pipeline] [execute] Model: KNeighborsRegressor
+[2025-12-07 09:34:19,897] [[36mINFO[0m] [pipeline] [execute] ────────────────────────────────────────────────────────────
+[2025-12-07 09:34:19,897] [[36mINFO[0m] [pipeline] [execute] Configurations for KNeighborsRegressor: 4
+[2025-12-07 09:34:21,396] [[36mINFO[0m] [pipeline] [_finalize_results] 
+✓ Saved comprehensive results: results\03_HYPERPARAMETER_OPTIMIZATION\results\all_configurations.xlsx
+[2025-12-07 09:34:21,399] [[36mINFO[0m] [pipeline] [_finalize_results] ✓ Best Model: ExtraTreesRegressor
+[2025-12-07 09:34:21,399] [[36mINFO[0m] [pipeline] [_finalize_results] ✓ Best CMAE: 1.0012°
+[2025-12-07 09:34:21,402] [[36mINFO[0m] [pipeline] [main] 
+
+[2025-12-07 09:34:21,403] [[36mINFO[0m] [pipeline] [analyze] 
+============================================================
+[2025-12-07 09:34:21,403] [[36mINFO[0m] [pipeline] [analyze] PHASE 4: HYPERPARAMETER ANALYSIS
+[2025-12-07 09:34:21,403] [[36mINFO[0m] [pipeline] [analyze] ============================================================
+[2025-12-07 09:34:22,179] [[36mINFO[0m] [pipeline] [analyze] Primary metric: cv_cmae_deg_mean
+[2025-12-07 09:34:22,179] [[36mINFO[0m] [pipeline] [analyze] Available metrics: ['cv_cmae_deg_mean', 'cv_crmse_deg_mean', 'cv_max_error_deg_mean']
+
+[2025-12-07 09:34:22,222] [[36mINFO[0m] [pipeline] [_generate_summary_report] ✓ Summary Report: summary_report.xlsx
+[2025-12-07 09:34:22,281] [[36mINFO[0m] [pipeline] [_generate_optimal_ranges_multisheet] ✓ Optimal Ranges (Multi-sheet): optimal_ranges.xlsx
+[2025-12-07 09:34:22,282] [[36mINFO[0m] [pipeline] [analyze] 
+────────────────────────────────────────────────────────────
+[2025-12-07 09:34:22,282] [[36mINFO[0m] [pipeline] [analyze] Analyzing: ExtraTreesRegressor
+[2025-12-07 09:34:22,283] [[36mINFO[0m] [pipeline] [analyze] ────────────────────────────────────────────────────────────
+[2025-12-07 09:34:23,256] [[36mINFO[0m] [pipeline] [_visualize_model_landscape]   ✓ Generated 15 plots
+[2025-12-07 09:34:23,257] [[36mINFO[0m] [pipeline] [analyze] 
+────────────────────────────────────────────────────────────
+[2025-12-07 09:34:23,257] [[36mINFO[0m] [pipeline] [analyze] Analyzing: KNeighborsRegressor
+[2025-12-07 09:34:23,257] [[36mINFO[0m] [pipeline] [analyze] ────────────────────────────────────────────────────────────
+[2025-12-07 09:34:24,214] [[36mINFO[0m] [pipeline] [_visualize_model_landscape]   ✓ Generated 15 plots
+[2025-12-07 09:34:24,215] [[36mINFO[0m] [pipeline] [analyze] 
+============================================================
+[2025-12-07 09:34:24,215] [[36mINFO[0m] [pipeline] [analyze] ✓ HPO Analysis Complete
+[2025-12-07 09:34:24,215] [[36mINFO[0m] [pipeline] [analyze] ✓ Results: results\03_HYPERPARAMETER_OPTIMIZATION\analysis
+[2025-12-07 09:34:24,215] [[36mINFO[0m] [pipeline] [analyze] =============================================================
+
+[2025-12-07 09:34:24,216] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-07 09:34:24,216] [[36mINFO[0m] [pipeline] [main] PHASE 5: MODEL TRAINING
+[2025-12-07 09:34:24,216] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:34:24,216] [[36mINFO[0m] [pipeline] [train] Starting Final Model Training...
+[2025-12-07 09:34:24,218] [[36mINFO[0m] [pipeline] [train] Training ExtraTreesRegressor on 3110 samples with 167 features.
+[2025-12-07 09:34:28,951] [[36mINFO[0m] [pipeline] [train] Training completed in 4.73 seconds.
+[2025-12-07 09:34:29,220] [[36mINFO[0m] [pipeline] [train] Model saved to results\05_FINAL_MODEL\final_model.pkl
+[2025-12-07 09:34:29,222] [[36mINFO[0m] [pipeline] [main] [OK] Model trained: ExtraTreesRegressor
+[2025-12-07 09:34:29,222] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-07 09:34:29,222] [[36mINFO[0m] [pipeline] [main] PHASE 6: PREDICTION & EVALUATION
+[2025-12-07 09:34:29,222] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:34:29,223] [[36mINFO[0m] [pipeline] [predict] Generating predictions for val set (389 samples)...
+[2025-12-07 09:34:29,385] [[36mINFO[0m] [pipeline] [predict] Predictions saved to results\06_PREDICTIONS\predictions_val.xlsx
+[2025-12-07 09:34:29,385] [[36mINFO[0m] [pipeline] [predict] Generating predictions for test set (389 samples)...
+[2025-12-07 09:34:29,546] [[36mINFO[0m] [pipeline] [predict] Predictions saved to results\06_PREDICTIONS\predictions_test.xlsx
+[2025-12-07 09:34:29,547] [[36mINFO[0m] [pipeline] [main] [OK] Predictions generated
+[2025-12-07 09:34:29,547] [[36mINFO[0m] [pipeline] [evaluate] Starting Evaluation for val set...
+[2025-12-07 09:34:29,610] [[36mINFO[0m] [pipeline] [evaluate] Evaluation complete. val CMAE: 0.9533°
+[2025-12-07 09:34:29,611] [[36mINFO[0m] [pipeline] [evaluate] Starting Evaluation for test set...
+[2025-12-07 09:34:29,674] [[36mINFO[0m] [pipeline] [evaluate] Evaluation complete. test CMAE: 1.4820°
+[2025-12-07 09:34:29,675] [[36mINFO[0m] [pipeline] [main] 
+Validation Performance:
+[2025-12-07 09:34:29,675] [[36mINFO[0m] [pipeline] [main]   CMAE: 0.9533 degrees
+[2025-12-07 09:34:29,675] [[36mINFO[0m] [pipeline] [main]   Accuracy @ 5 deg: 97.17%
+[2025-12-07 09:34:29,675] [[36mINFO[0m] [pipeline] [main] 
+Test Performance:
+[2025-12-07 09:34:29,675] [[36mINFO[0m] [pipeline] [main]   CMAE: 1.4820 degrees
+[2025-12-07 09:34:29,675] [[36mINFO[0m] [pipeline] [main]   Accuracy @ 5 deg: 95.63%
+[2025-12-07 09:34:29,676] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-07 09:34:29,676] [[36mINFO[0m] [pipeline] [main] PHASE 7: DIAGNOSTICS
+[2025-12-07 09:34:29,676] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:34:29,677] [[36mINFO[0m] [pipeline] [generate_all] Generating diagnostics for val set...
+[2025-12-07 09:34:31,299] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-07 09:34:31,304] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-07 09:34:31,480] [[36mINFO[0m] [pipeline] [generate_all] Diagnostics generation complete for val.
+[2025-12-07 09:34:31,480] [[36mINFO[0m] [pipeline] [generate_all] Generating diagnostics for test set...
+[2025-12-07 09:34:33,184] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-07 09:34:33,188] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-07 09:34:33,378] [[36mINFO[0m] [pipeline] [generate_all] Diagnostics generation complete for test.
+[2025-12-07 09:34:33,378] [[36mINFO[0m] [pipeline] [main] [OK] Diagnostic plots generated
+[2025-12-07 09:34:33,379] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-07 09:34:33,379] [[36mINFO[0m] [pipeline] [main] PHASE 8: ERROR ANALYSIS
+[2025-12-07 09:34:33,379] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:34:33,379] [[36mINFO[0m] [pipeline] [analyze] Starting Error Analysis for val set...
+[2025-12-07 09:34:33,481] [[36mINFO[0m] [pipeline] [_detect_outliers] Detected 2 statistical outliers using 3sigma.
+[2025-12-07 09:34:33,549] [[36mINFO[0m] [pipeline] [analyze] Error Analysis complete for val.
+[2025-12-07 09:34:33,549] [[36mINFO[0m] [pipeline] [analyze] Starting Error Analysis for test set...
+[2025-12-07 09:34:33,652] [[36mINFO[0m] [pipeline] [_detect_outliers] Detected 4 statistical outliers using 3sigma.
+[2025-12-07 09:34:33,720] [[36mINFO[0m] [pipeline] [analyze] Error Analysis complete for test.
+[2025-12-07 09:34:33,720] [[36mINFO[0m] [pipeline] [main] [OK] Error analysis complete
+[2025-12-07 09:34:33,720] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-07 09:34:33,720] [[36mINFO[0m] [pipeline] [main] PHASE 9: ADVANCED ANALYTICS
+[2025-12-07 09:34:33,721] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:34:33,721] [[36mINFO[0m] [pipeline] [bootstrap] Bootstrapping disabled in config.
+[2025-12-07 09:34:33,721] [[36mINFO[0m] [pipeline] [ensemble] Ensembling disabled in config.
+[2025-12-07 09:34:33,721] [[36mINFO[0m] [pipeline] [run_stability_analysis] Stability Analysis disabled in config.
+[2025-12-07 09:34:33,721] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-07 09:34:33,722] [[36mINFO[0m] [pipeline] [main] PHASE 10: REPORTING
+[2025-12-07 09:34:33,722] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:34:34,898] [[36mINFO[0m] [pipeline] [generate_report] Report generated successfully: results\10_REPORT\final_report.pdf
+[2025-12-07 09:34:34,898] [[36mINFO[0m] [pipeline] [main] [OK] PDF Report: results\10_REPORT\final_report.pdf
+[2025-12-07 09:34:34,899] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-07 09:34:34,899] [[36mINFO[0m] [pipeline] [main] PHASE 11: REPRODUCIBILITY PACKAGING
+[2025-12-07 09:34:34,899] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:34:34,899] [[36mINFO[0m] [pipeline] [package] Creating Reproducibility Package...
+[2025-12-07 09:34:35,506] [[36mINFO[0m] [pipeline] [package] Reproducibility Package successfully created at: C:\Users\Sri\Projects\offshore_riser_ml\results\11_REPRODUCIBILITY_PACKAGE
+[2025-12-07 09:34:35,507] [[36mINFO[0m] [pipeline] [main] [OK] Reproducibility Package: results\11_REPRODUCIBILITY_PACKAGE
+[2025-12-07 09:34:35,507] [[36mINFO[0m] [pipeline] [main] 
+================================================================================
+[2025-12-07 09:34:35,507] [[36mINFO[0m] [pipeline] [main]     PIPELINE COMPLETED SUCCESSFULLY
+[2025-12-07 09:34:35,507] [[36mINFO[0m] [pipeline] [main] ================================================================================
+[2025-12-07 09:34:35,507] [[36mINFO[0m] [pipeline] [main] 
+>> Final Report:      results\10_REPORT\final_report.pdf
+[2025-12-07 09:34:35,508] [[36mINFO[0m] [pipeline] [main] >> Package:           results\11_REPRODUCIBILITY_PACKAGE
+[2025-12-07 09:34:35,508] [[36mINFO[0m] [pipeline] [main] >> Results Directory: C:\Users\Sri\Projects\offshore_riser_ml\results
+[2025-12-07 09:34:35,508] [[36mINFO[0m] [pipeline] [main] 
+================================================================================
+
+[2025-12-07 09:52:52,432] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:52:52,432] [[36mINFO[0m] [pipeline] [main] PHASE 1: FOUNDATION
+[2025-12-07 09:52:52,432] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:52:52,432] [[36mINFO[0m] [pipeline] [main] Run ID: 20251207_095252
+[2025-12-07 09:52:52,432] [[36mINFO[0m] [pipeline] [main] Results Directory: C:\Users\Sri\Projects\offshore_riser_ml\results
+[2025-12-07 09:52:52,433] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-07 09:52:52,433] [[36mINFO[0m] [pipeline] [main] PHASE 2: DATA PREPARATION
+[2025-12-07 09:52:52,433] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:52:52,433] [[36mINFO[0m] [pipeline] [execute] Starting Data Manager execution...
+[2025-12-07 09:52:52,434] [[36mINFO[0m] [pipeline] [load_data] Loading data from data/raw/Feature_Extraction_156_best_math_transformed_SignSafe.xlsx
+[2025-12-07 09:52:57,088] [[36mINFO[0m] [pipeline] [load_data] Loaded 3888 rows, 169 columns
+[2025-12-07 09:52:57,089] [[36mINFO[0m] [pipeline] [validate_columns] Required columns validated successfully.
+[2025-12-07 09:52:57,128] [[36mINFO[0m] [pipeline] [validate_circle_constraint] Circle Check: GOOD=3888, WARNING=0, BAD=0
+[2025-12-07 09:52:57,413] [[36mINFO[0m] [pipeline] [compute_derived_columns] Derived columns computed. Unique combined bins: 384
+[2025-12-07 09:52:57,724] [[36mINFO[0m] [pipeline] [generate_reports] Distribution plots generated.
+[2025-12-07 09:53:04,309] [[36mINFO[0m] [pipeline] [execute] Saved validated data to results\01_DATA_VALIDATION\validated_data.xlsx
+[2025-12-07 09:53:04,341] [[36mINFO[0m] [pipeline] [main] [OK] Data validated: 3888 samples
+[2025-12-07 09:53:04,341] [[36mINFO[0m] [pipeline] [execute] Starting Split Engine execution...
+[2025-12-07 09:53:04,342] [[36mINFO[0m] [pipeline] [_determine_stratification_strategy] Bin Analysis (combined_bin): 0 bins have < 2 samples (0.0%)
+[2025-12-07 09:53:04,343] [[36mINFO[0m] [pipeline] [_determine_stratification_strategy] Using 'combined_bin' for stratification.
+[2025-12-07 09:53:11,365] [[36mINFO[0m] [pipeline] [execute] Splits saved: Train=3110, Val=389, Test=389
+[2025-12-07 09:53:11,365] [[36mINFO[0m] [pipeline] [main] [OK] Data split: Train=3110, Val=389, Test=389
+[2025-12-07 09:53:11,365] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-07 09:53:11,365] [[36mINFO[0m] [pipeline] [main] PHASE 3: HYPERPARAMETER OPTIMIZATION (SEARCH)
+[2025-12-07 09:53:11,366] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:53:11,366] [[36mINFO[0m] [pipeline] [execute] Starting Hyperparameter Optimization (HPO)...
+[2025-12-07 09:53:11,430] [[36mINFO[0m] [pipeline] [_load_progress] Resumed HPO: 1156 configs already completed.
+[2025-12-07 09:53:11,433] [[36mINFO[0m] [pipeline] [execute] Expanding grid for ExtraTreesRegressor...
+[2025-12-07 09:53:11,439] [[36mINFO[0m] [pipeline] [execute] Expanding grid for KNeighborsRegressor...
+[2025-12-07 09:53:12,839] [[36mINFO[0m] [pipeline] [_finalize_results] Saved comprehensive results to results\03_HYPERPARAMETER_OPTIMIZATION\results\all_configurations.xlsx
+[2025-12-07 09:53:12,841] [[36mINFO[0m] [pipeline] [_finalize_results] Best config: ExtraTreesRegressor | CV CMAE: 1.0012
+[2025-12-07 09:53:12,845] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-07 09:53:12,845] [[36mINFO[0m] [pipeline] [main] PHASE 4: HYPERPARAMETER ANALYSIS (VISUALIZATION)
+[2025-12-07 09:53:12,846] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:53:12,846] [[36mINFO[0m] [pipeline] [analyze] Starting Hyperparameter Analysis...
+[2025-12-07 09:53:13,576] [[36mINFO[0m] [pipeline] [analyze] Found metrics - CV: 3, Val: 0, Test: 0
+[2025-12-07 09:53:13,624] [[36mINFO[0m] [pipeline] [_generate_optimal_ranges_report_multisheet] Generated multi-sheet optimal ranges: results\04_HYPERPARAMETER_ANALYSIS\optimal_ranges.xlsx
+[2025-12-07 09:53:13,647] [[36mINFO[0m] [pipeline] [_generate_summary_report] Generated summary report
+[2025-12-07 09:53:13,649] [[36mINFO[0m] [pipeline] [analyze] Generating visualizations for ExtraTreesRegressor...
+[2025-12-07 09:53:16,710] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383922914  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  3  Error-roundoff 5.5e-15  _one-merge 3.9e-14
+  Visible-distance 1.1e-14  U-max-coplanar 1.1e-14  Width-outside 2.2e-14
+  _wide-facet 6.7e-14  _maxoutside 4.4e-14
+
+[2025-12-07 09:53:16,712] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383922914  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  1  Error-roundoff 2.8e-15  _one-merge 1.9e-14
+  Visible-distance 5.5e-15  U-max-coplanar 5.5e-15  Width-outside 1.1e-14
+  _wide-facet 3.3e-14  _maxoutside 2.2e-14
+
+[2025-12-07 09:53:16,715] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383922914  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  3  Error-roundoff 5.5e-15  _one-merge 3.9e-14
+  Visible-distance 1.1e-14  U-max-coplanar 1.1e-14  Width-outside 2.2e-14
+  _wide-facet 6.7e-14  _maxoutside 4.4e-14
+
+[2025-12-07 09:53:16,716] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383922914  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  1  Error-roundoff 2.8e-15  _one-merge 1.9e-14
+  Visible-distance 5.5e-15  U-max-coplanar 5.5e-15  Width-outside 1.1e-14
+  _wide-facet 3.3e-14  _maxoutside 2.2e-14
+
+[2025-12-07 09:53:16,719] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383922914  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  3  Error-roundoff 5.5e-15  _one-merge 3.9e-14
+  Visible-distance 1.1e-14  U-max-coplanar 1.1e-14  Width-outside 2.2e-14
+  _wide-facet 6.7e-14  _maxoutside 4.4e-14
+
+[2025-12-07 09:53:16,720] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383922914  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  1  Error-roundoff 2.8e-15  _one-merge 1.9e-14
+  Visible-distance 5.5e-15  U-max-coplanar 5.5e-15  Width-outside 1.1e-14
+  _wide-facet 3.3e-14  _maxoutside 2.2e-14
+
+[2025-12-07 09:53:16,734] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383922914  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  3  Error-roundoff 5.5e-15  _one-merge 3.9e-14
+  Visible-distance 1.1e-14  U-max-coplanar 1.1e-14  Width-outside 2.2e-14
+  _wide-facet 6.7e-14  _maxoutside 4.4e-14
+
+[2025-12-07 09:53:16,752] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383922914  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  1  Error-roundoff 2.8e-15  _one-merge 1.9e-14
+  Visible-distance 5.5e-15  U-max-coplanar 5.5e-15  Width-outside 1.1e-14
+  _wide-facet 3.3e-14  _maxoutside 2.2e-14
+
+[2025-12-07 09:53:16,766] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383922914  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  3  Error-roundoff 5.5e-15  _one-merge 3.9e-14
+  Visible-distance 1.1e-14  U-max-coplanar 1.1e-14  Width-outside 2.2e-14
+  _wide-facet 6.7e-14  _maxoutside 4.4e-14
+
+[2025-12-07 09:53:16,777] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383922914  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  1  Error-roundoff 2.8e-15  _one-merge 1.9e-14
+  Visible-distance 5.5e-15  U-max-coplanar 5.5e-15  Width-outside 1.1e-14
+  _wide-facet 3.3e-14  _maxoutside 2.2e-14
+
+[2025-12-07 09:53:16,790] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383922914  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  3  Error-roundoff 5.5e-15  _one-merge 3.9e-14
+  Visible-distance 1.1e-14  U-max-coplanar 1.1e-14  Width-outside 2.2e-14
+  _wide-facet 6.7e-14  _maxoutside 4.4e-14
+
+[2025-12-07 09:53:16,801] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383922914  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  1  Error-roundoff 2.8e-15  _one-merge 1.9e-14
+  Visible-distance 5.5e-15  U-max-coplanar 5.5e-15  Width-outside 1.1e-14
+  _wide-facet 3.3e-14  _maxoutside 2.2e-14
+
+[2025-12-07 09:53:17,599] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383939721  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:17,601] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383939721  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:17,603] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383939721  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:17,604] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383939721  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:17,606] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383939721  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:17,608] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383939721  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:17,619] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383939721  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:17,630] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383939721  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:17,642] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383939721  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:17,652] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383939721  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:17,663] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383939721  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:17,675] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383939721  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:18,537] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383956528  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:18,539] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383956528  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:18,541] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383956528  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:18,543] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383956528  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:18,545] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383956528  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:18,547] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383956528  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:18,561] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383956528  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:18,572] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383956528  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:18,584] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383956528  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:18,597] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383956528  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:18,610] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383956528  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:18,629] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 383956528  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:25,207] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384074177  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  3  Error-roundoff 5.5e-15  _one-merge 3.9e-14
+  Visible-distance 1.1e-14  U-max-coplanar 1.1e-14  Width-outside 2.2e-14
+  _wide-facet 6.7e-14  _maxoutside 4.4e-14
+
+[2025-12-07 09:53:25,208] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384074177  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  1  Error-roundoff 2.8e-15  _one-merge 1.9e-14
+  Visible-distance 5.5e-15  U-max-coplanar 5.5e-15  Width-outside 1.1e-14
+  _wide-facet 3.3e-14  _maxoutside 2.2e-14
+
+[2025-12-07 09:53:25,211] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384074177  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  3  Error-roundoff 5.5e-15  _one-merge 3.9e-14
+  Visible-distance 1.1e-14  U-max-coplanar 1.1e-14  Width-outside 2.2e-14
+  _wide-facet 6.7e-14  _maxoutside 4.4e-14
+
+[2025-12-07 09:53:25,212] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384074177  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  1  Error-roundoff 2.8e-15  _one-merge 1.9e-14
+  Visible-distance 5.5e-15  U-max-coplanar 5.5e-15  Width-outside 1.1e-14
+  _wide-facet 3.3e-14  _maxoutside 2.2e-14
+
+[2025-12-07 09:53:25,215] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384074177  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  3  Error-roundoff 5.5e-15  _one-merge 3.9e-14
+  Visible-distance 1.1e-14  U-max-coplanar 1.1e-14  Width-outside 2.2e-14
+  _wide-facet 6.7e-14  _maxoutside 4.4e-14
+
+[2025-12-07 09:53:25,217] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384074177  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  1  Error-roundoff 2.8e-15  _one-merge 1.9e-14
+  Visible-distance 5.5e-15  U-max-coplanar 5.5e-15  Width-outside 1.1e-14
+  _wide-facet 3.3e-14  _maxoutside 2.2e-14
+
+[2025-12-07 09:53:25,231] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384074177  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  3  Error-roundoff 5.5e-15  _one-merge 3.9e-14
+  Visible-distance 1.1e-14  U-max-coplanar 1.1e-14  Width-outside 2.2e-14
+  _wide-facet 6.7e-14  _maxoutside 4.4e-14
+
+[2025-12-07 09:53:25,242] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384074177  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  1  Error-roundoff 2.8e-15  _one-merge 1.9e-14
+  Visible-distance 5.5e-15  U-max-coplanar 5.5e-15  Width-outside 1.1e-14
+  _wide-facet 3.3e-14  _maxoutside 2.2e-14
+
+[2025-12-07 09:53:25,255] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384074177  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  3  Error-roundoff 5.5e-15  _one-merge 3.9e-14
+  Visible-distance 1.1e-14  U-max-coplanar 1.1e-14  Width-outside 2.2e-14
+  _wide-facet 6.7e-14  _maxoutside 4.4e-14
+
+[2025-12-07 09:53:25,278] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384074177  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  1  Error-roundoff 2.8e-15  _one-merge 1.9e-14
+  Visible-distance 5.5e-15  U-max-coplanar 5.5e-15  Width-outside 1.1e-14
+  _wide-facet 3.3e-14  _maxoutside 2.2e-14
+
+[2025-12-07 09:53:25,290] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384074177  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  3  Error-roundoff 5.5e-15  _one-merge 3.9e-14
+  Visible-distance 1.1e-14  U-max-coplanar 1.1e-14  Width-outside 2.2e-14
+  _wide-facet 6.7e-14  _maxoutside 4.4e-14
+
+[2025-12-07 09:53:25,302] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384074177  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  1  Error-roundoff 2.8e-15  _one-merge 1.9e-14
+  Visible-distance 5.5e-15  U-max-coplanar 5.5e-15  Width-outside 1.1e-14
+  _wide-facet 3.3e-14  _maxoutside 2.2e-14
+
+[2025-12-07 09:53:26,135] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384090984  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:26,137] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384090984  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:26,139] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384090984  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:26,140] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384090984  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:26,142] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384090984  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:26,145] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384090984  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:26,166] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384090984  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:26,177] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384090984  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:26,190] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384090984  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:26,200] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384090984  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:26,211] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384090984  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:26,224] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384090984  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:27,039] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384107791  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:27,040] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384107791  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:27,042] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384107791  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:27,043] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384107791  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:27,045] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384107791  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:27,047] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384107791  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:27,060] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384107791  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:27,072] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384107791  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:27,084] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384107791  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:27,095] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384107791  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:27,106] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384107791  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:27,117] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384107791  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:34,076] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384225440  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  3  Error-roundoff 5.5e-15  _one-merge 3.9e-14
+  Visible-distance 1.1e-14  U-max-coplanar 1.1e-14  Width-outside 2.2e-14
+  _wide-facet 6.7e-14  _maxoutside 4.4e-14
+
+[2025-12-07 09:53:34,078] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384225440  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  1  Error-roundoff 2.8e-15  _one-merge 1.9e-14
+  Visible-distance 5.5e-15  U-max-coplanar 5.5e-15  Width-outside 1.1e-14
+  _wide-facet 3.3e-14  _maxoutside 2.2e-14
+
+[2025-12-07 09:53:34,081] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384225440  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  3  Error-roundoff 5.5e-15  _one-merge 3.9e-14
+  Visible-distance 1.1e-14  U-max-coplanar 1.1e-14  Width-outside 2.2e-14
+  _wide-facet 6.7e-14  _maxoutside 4.4e-14
+
+[2025-12-07 09:53:34,083] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384225440  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  1  Error-roundoff 2.8e-15  _one-merge 1.9e-14
+  Visible-distance 5.5e-15  U-max-coplanar 5.5e-15  Width-outside 1.1e-14
+  _wide-facet 3.3e-14  _maxoutside 2.2e-14
+
+[2025-12-07 09:53:34,086] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384225440  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  3  Error-roundoff 5.5e-15  _one-merge 3.9e-14
+  Visible-distance 1.1e-14  U-max-coplanar 1.1e-14  Width-outside 2.2e-14
+  _wide-facet 6.7e-14  _maxoutside 4.4e-14
+
+[2025-12-07 09:53:34,088] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384225440  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  1  Error-roundoff 2.8e-15  _one-merge 1.9e-14
+  Visible-distance 5.5e-15  U-max-coplanar 5.5e-15  Width-outside 1.1e-14
+  _wide-facet 3.3e-14  _maxoutside 2.2e-14
+
+[2025-12-07 09:53:34,105] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384225440  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  3  Error-roundoff 5.5e-15  _one-merge 3.9e-14
+  Visible-distance 1.1e-14  U-max-coplanar 1.1e-14  Width-outside 2.2e-14
+  _wide-facet 6.7e-14  _maxoutside 4.4e-14
+
+[2025-12-07 09:53:34,118] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384225440  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  1  Error-roundoff 2.8e-15  _one-merge 1.9e-14
+  Visible-distance 5.5e-15  U-max-coplanar 5.5e-15  Width-outside 1.1e-14
+  _wide-facet 3.3e-14  _maxoutside 2.2e-14
+
+[2025-12-07 09:53:34,135] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384225440  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  3  Error-roundoff 5.5e-15  _one-merge 3.9e-14
+  Visible-distance 1.1e-14  U-max-coplanar 1.1e-14  Width-outside 2.2e-14
+  _wide-facet 6.7e-14  _maxoutside 4.4e-14
+
+[2025-12-07 09:53:34,151] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384225440  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  1  Error-roundoff 2.8e-15  _one-merge 1.9e-14
+  Visible-distance 5.5e-15  U-max-coplanar 5.5e-15  Width-outside 1.1e-14
+  _wide-facet 3.3e-14  _maxoutside 2.2e-14
+
+[2025-12-07 09:53:34,167] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384225440  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  3  Error-roundoff 5.5e-15  _one-merge 3.9e-14
+  Visible-distance 1.1e-14  U-max-coplanar 1.1e-14  Width-outside 2.2e-14
+  _wide-facet 6.7e-14  _maxoutside 4.4e-14
+
+[2025-12-07 09:53:34,182] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384225440  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  1  Error-roundoff 2.8e-15  _one-merge 1.9e-14
+  Visible-distance 5.5e-15  U-max-coplanar 5.5e-15  Width-outside 1.1e-14
+  _wide-facet 3.3e-14  _maxoutside 2.2e-14
+
+[2025-12-07 09:53:35,089] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384242247  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:35,091] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384242247  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:35,093] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384242247  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:35,095] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384242247  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:35,098] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384242247  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:35,100] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384242247  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:35,114] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384242247  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:35,128] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384242247  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:35,141] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384242247  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:35,153] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384242247  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:35,165] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384242247  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:35,175] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384242247  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width  8  Error-roundoff 1.4e-14  _one-merge 9.7e-14
+  Visible-distance 2.8e-14  U-max-coplanar 2.8e-14  Width-outside 5.5e-14
+  _wide-facet 1.7e-13  _maxoutside 1.1e-13
+
+[2025-12-07 09:53:36,224] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384259054  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:36,226] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384259054  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:36,228] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384259054  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:36,230] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384259054  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:36,232] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384259054  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:36,233] [[33mWARNING[0m] [pipeline] [_plot_contour_2d] Contour interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384259054  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:36,247] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384259054  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:36,260] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384259054  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:36,273] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384259054  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:36,295] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384259054  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:36,310] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384259054  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:36,325] [[33mWARNING[0m] [pipeline] [_plot_3d_surface] 3D interpolation failed: QH6013 qhull input error: input is less than 3-dimensional since all points have the same x coordinate    0
+
+While executing:  | qhull d Qbb Qt Qc Q12 Qz
+Options selected for Qhull 2020.2.r 2020/08/31:
+  run-id 384259054  delaunay  Qbbound-last  Qtriangulate  Qcoplanar-keep
+  Q12-allow-wide  Qz-infinity-point  _pre-merge  _zero-centrum  Qinterior-keep
+  Pgood  _max-width 9e+02  Error-roundoff 1.4e-12  _one-merge 9.7e-12
+  Visible-distance 2.8e-12  U-max-coplanar 2.8e-12  Width-outside 5.5e-12
+  _wide-facet 1.7e-11  _maxoutside 1.1e-11
+
+[2025-12-07 09:53:39,673] [[36mINFO[0m] [pipeline] [analyze] Generating visualizations for KNeighborsRegressor...
+[2025-12-07 09:54:03,709] [[36mINFO[0m] [pipeline] [analyze] HPO Analysis complete. Artifacts in results\04_HYPERPARAMETER_ANALYSIS
+[2025-12-07 09:54:03,710] [[36mINFO[0m] [pipeline] [main] [OK] HPO analysis complete
+[2025-12-07 09:54:03,710] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-07 09:54:03,710] [[36mINFO[0m] [pipeline] [main] PHASE 5: MODEL TRAINING
+[2025-12-07 09:54:03,710] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:54:03,711] [[36mINFO[0m] [pipeline] [train] Starting Final Model Training...
+[2025-12-07 09:54:03,712] [[36mINFO[0m] [pipeline] [train] Training ExtraTreesRegressor on 3110 samples with 167 features.
+[2025-12-07 09:54:08,651] [[36mINFO[0m] [pipeline] [train] Training completed in 4.94 seconds.
+[2025-12-07 09:54:08,949] [[36mINFO[0m] [pipeline] [train] Model saved to results\05_FINAL_MODEL\final_model.pkl
+[2025-12-07 09:54:08,950] [[36mINFO[0m] [pipeline] [main] [OK] Model trained: ExtraTreesRegressor
+[2025-12-07 09:54:08,950] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-07 09:54:08,950] [[36mINFO[0m] [pipeline] [main] PHASE 6: PREDICTION
+[2025-12-07 09:54:08,951] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:54:08,951] [[36mINFO[0m] [pipeline] [predict] Generating predictions for val set (389 samples)...
+[2025-12-07 09:54:09,118] [[36mINFO[0m] [pipeline] [predict] Predictions saved to results\06_PREDICTIONS\predictions_val.xlsx
+[2025-12-07 09:54:09,118] [[36mINFO[0m] [pipeline] [predict] Generating predictions for test set (389 samples)...
+[2025-12-07 09:54:09,280] [[36mINFO[0m] [pipeline] [predict] Predictions saved to results\06_PREDICTIONS\predictions_test.xlsx
+[2025-12-07 09:54:09,280] [[36mINFO[0m] [pipeline] [main] [OK] Predictions generated
+[2025-12-07 09:54:09,280] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-07 09:54:09,281] [[36mINFO[0m] [pipeline] [main] PHASE 7: EVALUATION
+[2025-12-07 09:54:09,281] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:54:09,281] [[36mINFO[0m] [pipeline] [evaluate] Starting Evaluation for val set...
+[2025-12-07 09:54:09,347] [[36mINFO[0m] [pipeline] [evaluate] Evaluation complete. val CMAE: 0.9533°
+[2025-12-07 09:54:09,347] [[36mINFO[0m] [pipeline] [evaluate] Starting Evaluation for test set...
+[2025-12-07 09:54:09,412] [[36mINFO[0m] [pipeline] [evaluate] Evaluation complete. test CMAE: 1.4820°
+[2025-12-07 09:54:09,413] [[36mINFO[0m] [pipeline] [main] Validation CMAE:         0.9533
+[2025-12-07 09:54:09,413] [[36mINFO[0m] [pipeline] [main] Validation Accuracy@5°: 97.17%
+[2025-12-07 09:54:09,413] [[36mINFO[0m] [pipeline] [main] Test CMAE:               1.4820
+[2025-12-07 09:54:09,413] [[36mINFO[0m] [pipeline] [main] Test Accuracy@5°:       95.63%
+[2025-12-07 09:54:09,413] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-07 09:54:09,413] [[36mINFO[0m] [pipeline] [main] PHASE 8: DIAGNOSTICS
+[2025-12-07 09:54:09,414] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:54:09,414] [[36mINFO[0m] [pipeline] [generate_all] Generating diagnostics for val set...
+[2025-12-07 09:54:11,071] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-07 09:54:11,075] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-07 09:54:11,264] [[36mINFO[0m] [pipeline] [generate_all] Diagnostics generation complete for val.
+[2025-12-07 09:54:11,265] [[36mINFO[0m] [pipeline] [generate_all] Generating diagnostics for test set...
+[2025-12-07 09:54:12,879] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-07 09:54:12,883] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-07 09:54:13,082] [[36mINFO[0m] [pipeline] [generate_all] Diagnostics generation complete for test.
+[2025-12-07 09:54:13,083] [[36mINFO[0m] [pipeline] [main] [OK] Diagnostic plots generated
+[2025-12-07 09:54:13,083] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-07 09:54:13,083] [[36mINFO[0m] [pipeline] [main] PHASE 9: ERROR ANALYSIS
+[2025-12-07 09:54:13,083] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:54:13,083] [[36mINFO[0m] [pipeline] [analyze] Starting Error Analysis for val set...
+[2025-12-07 09:54:13,188] [[36mINFO[0m] [pipeline] [_detect_outliers] Detected 2 statistical outliers using 3sigma.
+[2025-12-07 09:54:13,258] [[36mINFO[0m] [pipeline] [analyze] Error Analysis complete for val.
+[2025-12-07 09:54:13,258] [[36mINFO[0m] [pipeline] [analyze] Starting Error Analysis for test set...
+[2025-12-07 09:54:13,359] [[36mINFO[0m] [pipeline] [_detect_outliers] Detected 4 statistical outliers using 3sigma.
+[2025-12-07 09:54:13,429] [[36mINFO[0m] [pipeline] [analyze] Error Analysis complete for test.
+[2025-12-07 09:54:13,429] [[36mINFO[0m] [pipeline] [main] [OK] Error analysis complete
+[2025-12-07 09:54:13,429] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-07 09:54:13,429] [[36mINFO[0m] [pipeline] [main] PHASE 10: ADVANCED ANALYTICS
+[2025-12-07 09:54:13,429] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:54:13,430] [[36mINFO[0m] [pipeline] [bootstrap] Bootstrapping disabled in config.
+[2025-12-07 09:54:13,430] [[36mINFO[0m] [pipeline] [ensemble] Ensembling disabled in config.
+[2025-12-07 09:54:13,430] [[36mINFO[0m] [pipeline] [run_stability_analysis] Stability Analysis disabled in config.
+[2025-12-07 09:54:13,430] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-07 09:54:13,431] [[36mINFO[0m] [pipeline] [main] PHASE 11: REPORTING
+[2025-12-07 09:54:13,431] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-07 09:54:13,451] [[31m[1mCRITICAL[0m] [pipeline] [main] Unexpected: 'dict' object has no attribute 'sort'
+Traceback (most recent call last):
+  File "C:\Users\Sri\Projects\offshore_riser_ml\main.py", line 204, in main
+    report_path = rep_engine.generate_report(report_data, run_id)
+  File "C:\Users\Sri\Projects\offshore_riser_ml\modules\reporting_engine\reporting_engine.py", line 53, in generate_report
+    self._add_hpo_section(story, hpo_data)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Sri\Projects\offshore_riser_ml\modules\reporting_engine\reporting_engine.py", line 116, in _add_hpo_section
+    plot_paths.sort()
+    ^^^^^^^^^^^^^^^
+AttributeError: 'dict' object has no attribute 'sort'

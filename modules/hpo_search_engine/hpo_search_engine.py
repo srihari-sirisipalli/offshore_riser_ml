@@ -14,7 +14,6 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, e
 from modules.model_factory import ModelFactory
 from utils.circular_metrics import compute_cmae, compute_crmse, reconstruct_angle
 
-# FIX: Custom Encoder to handle Numpy float32/int64 types in JSON
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, (np.int_, np.intc, np.intp, np.int8,
@@ -32,6 +31,7 @@ class HPOSearchEngine:
     """
     Hyperparameter Optimization Engine with Resume Capability.
     Performs Grid Search with K-Fold Cross-Validation and generates detailed analytics.
+    Selection based on CV validation metrics ONLY (not test metrics).
     """
     
     def __init__(self, config: dict, logger: logging.Logger):
@@ -41,32 +41,56 @@ class HPOSearchEngine:
         self.progress_file: Optional[Path] = None
         self.completed_hashes = set()
 
-    def execute(self, train_df: pd.DataFrame, run_id: str) -> Dict[str, Any]:
+    def execute(self, train_df: pd.DataFrame, val_df: pd.DataFrame, test_df: pd.DataFrame, run_id: str) -> Dict[str, Any]:
         """
         Execute Grid Search and generate comprehensive results.
         
+        Parameters:
+            train_df: Training data for CV
+            val_df: Validation data for final eval
+            test_df: Test data for final eval (reporting only)
+            
         Returns:
-            dict: The best configuration found.
+            dict: The best configuration based on CV validation metrics.
         """
         self.logger.info("Starting Hyperparameter Optimization (HPO)...")
         
         # 1. Setup Output Directory
         base_dir = self.config.get('outputs', {}).get('base_results_dir', 'results')
-        output_dir = Path(base_dir) / "04_HYPERPARAMETER_SEARCH"
+        output_dir = Path(base_dir) / "03_HYPERPARAMETER_OPTIMIZATION"
         output_dir.mkdir(parents=True, exist_ok=True)
         
-        # 2. Setup Resume Capability (JSONL for flexibility with varying params)
-        self.progress_file = output_dir / "hpo_progress.jsonl"
+        # Create subdirectories
+        progress_dir = output_dir / "progress"
+        results_dir = output_dir / "results"
+        progress_dir.mkdir(exist_ok=True)
+        results_dir.mkdir(exist_ok=True)
+        
+        # 2. Setup Resume Capability
+        self.progress_file = progress_dir / "hpo_progress.jsonl"
         self._load_progress()
         
         # 3. Prepare Data
-        X = train_df.drop(columns=self.config['data']['drop_columns'] + 
+        X_train = train_df.drop(columns=self.config['data']['drop_columns'] + 
                           [self.config['data']['target_sin'], 
                            self.config['data']['target_cos'],
                            'angle_deg', 'angle_bin', 'hs_bin', 'combined_bin'], errors='ignore')
         
-        # Targets
-        y = train_df[[self.config['data']['target_sin'], self.config['data']['target_cos']]]
+        y_train = train_df[[self.config['data']['target_sin'], self.config['data']['target_cos']]]
+        
+        X_val = val_df.drop(columns=self.config['data']['drop_columns'] + 
+                          [self.config['data']['target_sin'], 
+                           self.config['data']['target_cos'],
+                           'angle_deg', 'angle_bin', 'hs_bin', 'combined_bin'], errors='ignore')
+        
+        y_val = val_df[[self.config['data']['target_sin'], self.config['data']['target_cos']]]
+        
+        X_test = test_df.drop(columns=self.config['data']['drop_columns'] + 
+                          [self.config['data']['target_sin'], 
+                           self.config['data']['target_cos'],
+                           'angle_deg', 'angle_bin', 'hs_bin', 'combined_bin'], errors='ignore')
+        
+        y_test = test_df[[self.config['data']['target_sin'], self.config['data']['target_cos']]]
         
         # Stratification key
         stratify_col = train_df['combined_bin'] if 'combined_bin' in train_df.columns else None
@@ -82,25 +106,30 @@ class HPOSearchEngine:
             for params in combinations:
                 config_counter += 1
                 
-                # Generate unique hash
-                # Ensure params are JSON serializable for the hash
                 config_signature = json.dumps({'model': model_name, 'params': params}, sort_keys=True, cls=NumpyEncoder)
                 config_hash = hashlib.md5(config_signature.encode()).hexdigest()
                 
-                # Check Resume
                 if config_hash in self.completed_hashes:
                     continue
                 
-                # Evaluate
                 try:
-                    cv_results = self._evaluate_config_cv(model_name, params, X, y, stratify_col)
+                    # Get CV metrics (for selection)
+                    cv_results = self._evaluate_config_cv(model_name, params, X_train, y_train, stratify_col)
+                    
+                    # Get validation metrics (for comparison)
+                    val_results = self._evaluate_on_set(model_name, params, X_train, y_train, X_val, y_val, prefix='val')
+                    
+                    # Get test metrics (for reporting only)
+                    test_results = self._evaluate_on_set(model_name, params, X_train, y_train, X_test, y_test, prefix='test')
+                    
                     status = "success"
                 except Exception as e:
                     self.logger.error(f"HPO Failed for {model_name} {params}: {str(e)}")
                     cv_results = {}
+                    val_results = {}
+                    test_results = {}
                     status = "failed"
 
-                # Construct Record
                 result_entry = {
                     'config_id': config_counter,
                     'config_hash': config_hash,
@@ -110,26 +139,25 @@ class HPOSearchEngine:
                     'params': params, 
                 }
                 
-                # Flatten params into record (e.g., param_n_estimators)
+                # Flatten params
                 for k, v in params.items():
                     result_entry[f'param_{k}'] = v
                 
-                # Merge CV metrics
+                # Merge all metrics
                 result_entry.update(cv_results)
+                result_entry.update(val_results)
+                result_entry.update(test_results)
                 
-                # Save Progress
                 self._save_progress(result_entry)
                 
                 cmae_val = cv_results.get('cv_cmae_deg_mean', float('nan'))
-                self.logger.info(f"Evaluated {model_name} | CMAE: {cmae_val:.4f}")
+                self.logger.info(f"Evaluated {model_name} | CV CMAE: {cmae_val:.4f}")
 
-        # 5. Finalize - Process all results
-        return self._finalize_results(output_dir)
+        # 5. Finalize
+        return self._finalize_results(results_dir)
 
     def _evaluate_config_cv(self, model_name: str, params: dict, X, y, stratify_col) -> dict:
-        """
-        Perform K-Fold CV and calculate detailed metrics for every fold and aggregates.
-        """
+        """Perform K-Fold CV and calculate metrics."""
         n_splits = self.hpo_config.get('cv_folds', 5)
         
         try:
@@ -148,10 +176,8 @@ class HPOSearchEngine:
             
             preds = model.predict(X_val)
             
-            # Metrics Calculation
             return self._calculate_fold_metrics(y_val, preds, fold_idx + 1)
 
-        # Generate splits
         if stratify_col is not None:
             splits = list(cv.split(X, stratify_col))
         else:
@@ -159,33 +185,26 @@ class HPOSearchEngine:
             
         n_jobs = self.config['execution'].get('n_jobs', -1)
         
-        # Run Parallel
         fold_results_list = Parallel(n_jobs=n_jobs)(
             delayed(run_fold)(i, train_idx, val_idx) for i, (train_idx, val_idx) in enumerate(splits)
         )
         
-        # Aggregate Results
         aggregated_results = {}
         
-        # 1. Collect per-fold columns (e.g., fold_1_cmae_deg)
         for fr in fold_results_list:
             aggregated_results.update(fr)
             
-        # 2. Compute Mean and Std for each metric type
         if fold_results_list:
-            # Extract keys from the first fold to know what metrics we have
             metric_names = set()
             for k in fold_results_list[0].keys():
-                # Remove 'fold_X_' prefix
                 parts = k.split('_')
                 if len(parts) > 2:
-                    metric_name = '_'.join(parts[2:]) # fold_1_cmae_deg -> cmae_deg
+                    metric_name = '_'.join(parts[2:])
                     metric_names.add(metric_name)
                 
             for metric in metric_names:
                 values = []
                 for fr in fold_results_list:
-                    # Find the key for this metric in this fold result
                     for k, v in fr.items():
                         if k.endswith(metric) and not k.startswith("cv_"):
                             values.append(v)
@@ -196,28 +215,40 @@ class HPOSearchEngine:
             
         return aggregated_results
 
+    def _evaluate_on_set(self, model_name: str, params: dict, X_train, y_train, X_eval, y_eval, prefix='val') -> dict:
+        """Evaluate config on a holdout set (val or test)."""
+        model = ModelFactory.create(model_name, params)
+        model.fit(X_train, y_train)
+        preds = model.predict(X_eval)
+        
+        metrics = self._calculate_metrics(y_eval, preds)
+        
+        # Add prefix
+        return {f'{prefix}_{k}': v for k, v in metrics.items()}
+
     def _calculate_fold_metrics(self, y_true_df, y_pred_raw, fold_num) -> dict:
-        """Calculate extensive metrics for a single fold."""
-        # 1. Reconstruct Angles
+        """Calculate metrics for a single fold."""
+        metrics = self._calculate_metrics(y_true_df, y_pred_raw)
+        prefix = f"fold_{fold_num}_"
+        return {f"{prefix}{k}": v for k, v in metrics.items()}
+
+    def _calculate_metrics(self, y_true_df, y_pred_raw) -> dict:
+        """Calculate all metrics."""
         y_true_np = y_true_df.values
         true_angle = reconstruct_angle(y_true_np[:, 0], y_true_np[:, 1])
         pred_angle = reconstruct_angle(y_pred_raw[:, 0], y_pred_raw[:, 1])
         
-        # 2. Angular Errors (Shortest arc)
         raw_diff = np.abs(true_angle - pred_angle)
         angle_error = np.where(raw_diff > 180, 360 - raw_diff, raw_diff)
         
-        # 3. Circular Metrics
         cmae = np.mean(angle_error)
         crmse = np.sqrt(np.mean(angle_error ** 2))
         max_err = np.max(angle_error)
         
-        # 4. Accuracy Metrics
         acc_0 = np.mean(angle_error <= 0.001) * 100
         acc_5 = np.mean(angle_error <= 5.0) * 100
         acc_10 = np.mean(angle_error <= 10.0) * 100
         
-        # 5. Component Metrics (Sin/Cos)
         mae_sin = mean_absolute_error(y_true_np[:, 0], y_pred_raw[:, 0])
         mae_cos = mean_absolute_error(y_true_np[:, 1], y_pred_raw[:, 1])
         rmse_sin = np.sqrt(mean_squared_error(y_true_np[:, 0], y_pred_raw[:, 0]))
@@ -229,28 +260,26 @@ class HPOSearchEngine:
         expl_var = (explained_variance_score(y_true_np[:, 0], y_pred_raw[:, 0]) + 
                     explained_variance_score(y_true_np[:, 1], y_pred_raw[:, 1])) / 2
         
-        prefix = f"fold_{fold_num}_"
         return {
-            f"{prefix}cmae_deg": cmae,
-            f"{prefix}crmse_deg": crmse,
-            f"{prefix}max_error_deg": max_err,
-            f"{prefix}accuracy_within_0deg": acc_0,
-            f"{prefix}accuracy_within_5deg": acc_5,
-            f"{prefix}accuracy_within_10deg": acc_10,
-            f"{prefix}mae_sin": mae_sin,
-            f"{prefix}mae_cos": mae_cos,
-            f"{prefix}rmse_sin": rmse_sin,
-            f"{prefix}rmse_cos": rmse_cos,
-            f"{prefix}r2_score": r2_avg,
-            f"{prefix}explained_variance": expl_var
+            'cmae_deg': cmae,
+            'crmse_deg': crmse,
+            'max_error_deg': max_err,
+            'accuracy_within_0deg': acc_0,
+            'accuracy_within_5deg': acc_5,
+            'accuracy_within_10deg': acc_10,
+            'mae_sin': mae_sin,
+            'mae_cos': mae_cos,
+            'rmse_sin': rmse_sin,
+            'rmse_cos': rmse_cos,
+            'r2_score': r2_avg,
+            'explained_variance': expl_var
         }
 
     def _finalize_results(self, output_dir: Path) -> dict:
-        """Read progress, format columns, save final Excel, and return best config."""
+        """Read progress, format, save, and return best config based on CV metrics."""
         if not self.progress_file.exists():
             return {}
             
-        # Read JSONL into DataFrame
         data = []
         with open(self.progress_file, 'r') as f:
             for line in f:
@@ -264,7 +293,6 @@ class HPOSearchEngine:
         if df.empty:
             return {}
 
-        # Sort columns to match the desired format
         cols = list(df.columns)
         
         def col_sort_key(c):
@@ -273,38 +301,55 @@ class HPOSearchEngine:
             if c.startswith('param_'):
                 return (1, c)
             if c.startswith('cv_'):
-                # prioritization within cv
                 if 'cmae' in c: return (2, 0, c)
                 if 'crmse' in c: return (2, 1, c)
                 return (2, 2, c)
+            if c.startswith('val_'):
+                return (3, c)
+            if c.startswith('test_'):
+                return (4, c)
             if c.startswith('fold_'):
                 parts = c.split('_')
                 try:
                     fold_num = int(parts[1])
                 except:
                     fold_num = 999
-                return (3, fold_num, c)
-            return (4, c)
+                return (5, fold_num, c)
+            return (6, c)
 
         sorted_cols = sorted(cols, key=col_sort_key)
         
         if 'params' in sorted_cols:
             sorted_cols.remove('params')
-            sorted_cols.insert(5, 'params') 
+            sorted_cols.insert(5, 'params')
             
         final_df = df[sorted_cols]
         
-        # Save Excel
-        excel_path = output_dir / "all_config_results.xlsx"
+        excel_path = output_dir / "all_configurations.xlsx"
         final_df.to_excel(excel_path, index=False)
         self.logger.info(f"Saved comprehensive results to {excel_path}")
         
-        # Find Best Config
+        # CRITICAL: Select best based on CV metrics ONLY
         metric_col = 'cv_cmae_deg_mean'
+        tie_breaker_col = 'cv_max_error_deg_mean'
+        
         if metric_col in final_df.columns:
-            best_row = final_df.loc[final_df[metric_col].idxmin()]
+            # Sort by primary metric
+            sorted_df = final_df.sort_values(metric_col, ascending=True)
             
-            # Helper to safely load params
+            # Get best CMAE value
+            best_cmae = sorted_df.iloc[0][metric_col]
+            
+            # Filter all configs with this exact CMAE (for tie-breaking)
+            best_candidates = sorted_df[sorted_df[metric_col] == best_cmae]
+            
+            if len(best_candidates) > 1 and tie_breaker_col in final_df.columns:
+                # Tie-breaker: use max_error
+                best_row = best_candidates.sort_values(tie_breaker_col, ascending=True).iloc[0]
+                self.logger.info(f"Tie-breaker applied: {len(best_candidates)} configs with CMAE={best_cmae:.4f}")
+            else:
+                best_row = sorted_df.iloc[0]
+            
             params_val = best_row['params']
             if isinstance(params_val, str):
                 params_val = json.loads(params_val)
@@ -312,16 +357,26 @@ class HPOSearchEngine:
             best_config = {
                 'model': best_row['model_name'],
                 'params': params_val,
-                'metrics': {
-                    'cmae': best_row['cv_cmae_deg_mean'],
-                    'crmse': best_row.get('cv_crmse_deg_mean', 0)
-                }
+                'cv_metrics': {
+                    'cmae': best_row.get('cv_cmae_deg_mean', 0),
+                    'crmse': best_row.get('cv_crmse_deg_mean', 0),
+                    'max_error': best_row.get('cv_max_error_deg_mean', 0)
+                },
+                'val_metrics': {
+                    'cmae': best_row.get('val_cmae_deg', 0),
+                    'crmse': best_row.get('val_crmse_deg', 0)
+                },
+                'test_metrics': {
+                    'cmae': best_row.get('test_cmae_deg', 0),
+                    'crmse': best_row.get('test_crmse_deg', 0)
+                },
+                'selection_note': 'Selected based on cv_cmae_deg_mean with cv_max_error_deg_mean as tie-breaker'
             }
             
-            # FIX: Use NumpyEncoder here as well
-            with open(output_dir / "best_config.json", 'w') as f:
+            with open(output_dir / "best_configuration.json", 'w') as f:
                 json.dump(best_config, f, indent=2, cls=NumpyEncoder)
                 
+            self.logger.info(f"Best config: {best_row['model_name']} | CV CMAE: {best_cmae:.4f}")
             return best_config
         
         return {}
@@ -341,6 +396,5 @@ class HPOSearchEngine:
 
     def _save_progress(self, result_entry: dict):
         """Append a single result as a JSON line."""
-        # FIX: Use NumpyEncoder to prevent "float32 is not serializable" error
         with open(self.progress_file, 'a') as f:
             f.write(json.dumps(result_entry, cls=NumpyEncoder) + "\n")

@@ -3,11 +3,27 @@ from typing import Dict, Any, List
 from sklearn.ensemble import (
     ExtraTreesRegressor,
     RandomForestRegressor,
-    GradientBoostingRegressor
+    GradientBoostingRegressor,
+    AdaBoostRegressor,
+    HistGradientBoostingRegressor,
+    BaggingRegressor
 )
-from sklearn.neighbors import KNeighborsRegressor
-from sklearn.linear_model import Ridge, Lasso, ElasticNet
+from sklearn.neighbors import KNeighborsRegressor, RadiusNeighborsRegressor
+from sklearn.linear_model import (
+    LinearRegression,
+    Ridge,
+    Lasso,
+    ElasticNet,
+    BayesianRidge,
+    SGDRegressor,
+    HuberRegressor,
+    TheilSenRegressor,
+    PassiveAggressiveRegressor
+)
+from sklearn.svm import SVR, LinearSVR, NuSVR
 from sklearn.tree import DecisionTreeRegressor
+from sklearn.neural_network import MLPRegressor
+from sklearn.kernel_ridge import KernelRidge
 from sklearn.multioutput import MultiOutputRegressor
 
 class ModelFactory:
@@ -16,33 +32,55 @@ class ModelFactory:
     Handles distinction between native multi-output models and those requiring wrappers.
     """
 
-    # Models that support multi-output regression natively (y shape: [n_samples, 2])
+    # Models that support multi-output regression natively
+    # (These fit ONE model that predicts [Sin, Cos] simultaneously)
     NATIVE_MODELS = {
+        # Ensembles (Trees)
         'ExtraTreesRegressor': ExtraTreesRegressor,
         'RandomForestRegressor': RandomForestRegressor,
-        'DecisionTreeRegressor': DecisionTreeRegressor
-    }
-
-    # Models that require MultiOutputRegressor wrapper
-    WRAPPED_MODELS = {
+        'DecisionTreeRegressor': DecisionTreeRegressor,
+        
+        # Nearest Neighbors
         'KNeighborsRegressor': KNeighborsRegressor,
-        'GradientBoostingRegressor': GradientBoostingRegressor,
+        'RadiusNeighborsRegressor': RadiusNeighborsRegressor,
+        
+        # Neural Networks (Very powerful for multi-target)
+        'MLPRegressor': MLPRegressor,
+        
+        # Linear / Kernel (Efficient native implementation via matrix math)
+        'LinearRegression': LinearRegression,
         'Ridge': Ridge,
         'Lasso': Lasso,
-        'ElasticNet': ElasticNet
+        'ElasticNet': ElasticNet,
+        'KernelRidge': KernelRidge
+    }
+
+    # Models that DO NOT support multi-output natively and MUST be wrapped
+    # (These fit TWO separate models: Model_Sin and Model_Cos)
+    WRAPPED_MODELS = {
+        # Boosting
+        'GradientBoostingRegressor': GradientBoostingRegressor,
+        'HistGradientBoostingRegressor': HistGradientBoostingRegressor,
+        'AdaBoostRegressor': AdaBoostRegressor,
+        'BaggingRegressor': BaggingRegressor,
+        
+        # Support Vector Machines
+        'SVR': SVR,
+        'LinearSVR': LinearSVR,
+        'NuSVR': NuSVR,
+        
+        # Specialized Linear / Robust
+        'BayesianRidge': BayesianRidge,
+        'SGDRegressor': SGDRegressor,
+        'HuberRegressor': HuberRegressor,
+        'TheilSenRegressor': TheilSenRegressor,
+        'PassiveAggressiveRegressor': PassiveAggressiveRegressor
     }
 
     @classmethod
     def create(cls, model_name: str, params: Dict[str, Any] = None) -> Any:
         """
         Create and return an instantiated model.
-
-        Parameters:
-            model_name: Name of the model class (e.g., 'ExtraTreesRegressor')
-            params: Dictionary of hyperparameters.
-
-        Returns:
-            A scikit-learn estimator (or MultiOutputRegressor wrapping one).
         """
         if params is None:
             params = {}
@@ -63,8 +101,8 @@ class ModelFactory:
             return MultiOutputRegressor(base_estimator)
 
         else:
-            raise ValueError(f"Unknown model name: {model_name}. "
-                             f"Available: {list(cls.NATIVE_MODELS.keys()) + list(cls.WRAPPED_MODELS.keys())}")
+            all_models = list(cls.NATIVE_MODELS.keys()) + list(cls.WRAPPED_MODELS.keys())
+            raise ValueError(f"Unknown model name: {model_name}. Available: {all_models}")
 
     @classmethod
     def get_available_models(cls) -> List[str]:
@@ -75,11 +113,9 @@ class ModelFactory:
     def _filter_params(model_class, params: Dict[str, Any]) -> Dict[str, Any]:
         """
         Remove parameters from `params` that are not accepted by `model_class` constructor.
-        Prevents TypeError: __init__() got an unexpected keyword argument...
         """
         sig = inspect.signature(model_class.__init__)
         
-        # FIX: Accept both POSITIONAL_OR_KEYWORD and KEYWORD_ONLY arguments
         valid_keys = [
             p.name for p in sig.parameters.values()
             if p.kind in (p.POSITIONAL_OR_KEYWORD, p.KEYWORD_ONLY)

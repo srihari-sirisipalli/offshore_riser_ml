@@ -106,16 +106,30 @@ class ReportingEngine:
         if not models_plots:
             story.append(Paragraph("No visualization plots available.", self.normal))
 
-        for model_name, plot_paths in models_plots.items():
+        for model_name, metrics_map in models_plots.items():
             story.append(Paragraph(f"Analysis for {model_name}", self.h2))
-            if not plot_paths:
+            
+            if not metrics_map:
                 story.append(Paragraph("No plots available.", self.normal))
                 continue
             
-            # Sort plots to keep related ones together (heatmap, contour, 3d)
-            plot_paths.sort()
+            # --- FIX: Flatten dictionary to list before sorting ---
+            all_plot_paths = []
+            if isinstance(metrics_map, dict):
+                for metric_plots in metrics_map.values():
+                    if isinstance(metric_plots, list):
+                        all_plot_paths.extend(metric_plots)
+            elif isinstance(metrics_map, list):
+                all_plot_paths = metrics_map
             
-            for path in plot_paths:
+            if not all_plot_paths:
+                story.append(Paragraph("No plots generated for this model.", self.normal))
+                continue
+
+            # Now we can sort safely
+            all_plot_paths.sort()
+            
+            for path in all_plot_paths:
                 # Extract a readable caption from filename
                 caption = Path(path).stem.replace('_', ' ').title()
                 self._add_image(story, path, width=6*inch, height=4.5*inch, caption=caption)

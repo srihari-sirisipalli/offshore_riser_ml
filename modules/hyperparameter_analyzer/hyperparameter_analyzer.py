@@ -384,6 +384,11 @@ class HyperparameterAnalyzer:
         x = plot_df[x_col].values
         y = plot_df[y_col].values
         z = plot_df[z_col].values
+
+        # --- FIX: Check for variance ---
+        if len(np.unique(x)) < 2 or len(np.unique(y)) < 2:
+            return 
+        # -------------------------------
         
         try:
             xi = np.linspace(x.min(), x.max(), 100)
@@ -460,6 +465,11 @@ class HyperparameterAnalyzer:
         y = plot_df[y_col].values
         z = plot_df[z_col].values
         
+        # --- FIX: Check for variance ---
+        if len(np.unique(x)) < 2 or len(np.unique(y)) < 2:
+            return 
+        # -------------------------------
+
         fig = plt.figure(figsize=(14, 12))
         ax = fig.add_subplot(111, projection='3d')
 

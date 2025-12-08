@@ -29,9 +29,9 @@ class NumpyEncoder(json.JSONEncoder):
 
 class HPOSearchEngine:
     """
-    Hyperparameter Optimization Engine with Resume Capability.
-    Performs Grid Search with K-Fold Cross-Validation and generates detailed analytics.
-    Selection based on CV validation metrics ONLY (not test metrics).
+    Hyperparameter Optimization Engine with Resume Capability & Crash-Proof Snapshot Tracking.
+    Performs Grid Search with K-Fold Cross-Validation.
+    Saves raw prediction snapshots to disk immediately for Global Error Tracking.
     """
     
     def __init__(self, config: dict, logger: logging.Logger):
@@ -43,15 +43,7 @@ class HPOSearchEngine:
 
     def execute(self, train_df: pd.DataFrame, val_df: pd.DataFrame, test_df: pd.DataFrame, run_id: str) -> Dict[str, Any]:
         """
-        Execute Grid Search and generate comprehensive results.
-        
-        Parameters:
-            train_df: Training data for CV
-            val_df: Validation data for final eval
-            test_df: Test data for final eval (reporting only)
-            
-        Returns:
-            dict: The best configuration based on CV validation metrics.
+        Execute Grid Search, save snapshots, and generate detailed results.
         """
         self.logger.info("Starting Hyperparameter Optimization (HPO)...")
         
@@ -59,6 +51,11 @@ class HPOSearchEngine:
         base_dir = self.config.get('outputs', {}).get('base_results_dir', 'results')
         output_dir = Path(base_dir) / "03_HYPERPARAMETER_OPTIMIZATION"
         output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # [NEW] Setup Snapshot Directory for Global Tracking
+        # FIX: Ensure base_dir is wrapped in Path() before using '/' operator
+        snapshot_dir = Path(base_dir) / "03_HPO_SEARCH" / "tracking_snapshots"
+        snapshot_dir.mkdir(parents=True, exist_ok=True)
         
         # Create subdirectories
         progress_dir = output_dir / "progress"
@@ -71,25 +68,22 @@ class HPOSearchEngine:
         self._load_progress()
         
         # 3. Prepare Data
-        X_train = train_df.drop(columns=self.config['data']['drop_columns'] + 
-                          [self.config['data']['target_sin'], 
-                           self.config['data']['target_cos'],
-                           'angle_deg', 'angle_bin', 'hs_bin', 'combined_bin'], errors='ignore')
+        drop_cols = self.config['data']['drop_columns'] + [
+            self.config['data']['target_sin'], 
+            self.config['data']['target_cos'],
+            'angle_deg', 'angle_bin', 'hs_bin', 'combined_bin'
+        ]
         
+        # Training Data
+        X_train = train_df.drop(columns=drop_cols, errors='ignore')
         y_train = train_df[[self.config['data']['target_sin'], self.config['data']['target_cos']]]
         
-        X_val = val_df.drop(columns=self.config['data']['drop_columns'] + 
-                          [self.config['data']['target_sin'], 
-                           self.config['data']['target_cos'],
-                           'angle_deg', 'angle_bin', 'hs_bin', 'combined_bin'], errors='ignore')
-        
+        # Validation Data (for metrics + snapshot)
+        X_val = val_df.drop(columns=drop_cols, errors='ignore')
         y_val = val_df[[self.config['data']['target_sin'], self.config['data']['target_cos']]]
         
-        X_test = test_df.drop(columns=self.config['data']['drop_columns'] + 
-                          [self.config['data']['target_sin'], 
-                           self.config['data']['target_cos'],
-                           'angle_deg', 'angle_bin', 'hs_bin', 'combined_bin'], errors='ignore')
-        
+        # Test Data (for metrics + snapshot)
+        X_test = test_df.drop(columns=drop_cols, errors='ignore')
         y_test = test_df[[self.config['data']['target_sin'], self.config['data']['target_cos']]]
         
         # Stratification key
@@ -113,21 +107,31 @@ class HPOSearchEngine:
                     continue
                 
                 try:
-                    # Get CV metrics (for selection)
+                    # A. Perform CV (Selection Metrics)
                     cv_results = self._evaluate_config_cv(model_name, params, X_train, y_train, stratify_col)
                     
-                    # Get validation metrics (for comparison)
-                    val_results = self._evaluate_on_set(model_name, params, X_train, y_train, X_val, y_val, prefix='val')
+                    # B. Train Final Model on Full Train Set (Optimization: Fit once for both Val/Test)
+                    model = ModelFactory.create(model_name, params)
+                    model.fit(X_train, y_train)
                     
-                    # Get test metrics (for reporting only)
-                    test_results = self._evaluate_on_set(model_name, params, X_train, y_train, X_test, y_test, prefix='test')
+                    # C. Predict & Snapshot (Val)
+                    preds_val = model.predict(X_val)
+                    val_metrics = self._calculate_metrics_with_prefix(y_val, preds_val, prefix="val")
+                    # [NEW] Save Snapshot
+                    self._save_snapshot(snapshot_dir, config_counter, "val", val_df.index, y_val, preds_val)
+                    
+                    # D. Predict & Snapshot (Test)
+                    preds_test = model.predict(X_test)
+                    test_metrics = self._calculate_metrics_with_prefix(y_test, preds_test, prefix="test")
+                    # [NEW] Save Snapshot
+                    self._save_snapshot(snapshot_dir, config_counter, "test", test_df.index, y_test, preds_test)
                     
                     status = "success"
                 except Exception as e:
                     self.logger.error(f"HPO Failed for {model_name} {params}: {str(e)}")
                     cv_results = {}
-                    val_results = {}
-                    test_results = {}
+                    val_metrics = {}
+                    test_metrics = {}
                     status = "failed"
 
                 result_entry = {
@@ -145,8 +149,8 @@ class HPOSearchEngine:
                 
                 # Merge all metrics
                 result_entry.update(cv_results)
-                result_entry.update(val_results)
-                result_entry.update(test_results)
+                result_entry.update(val_metrics)
+                result_entry.update(test_metrics)
                 
                 self._save_progress(result_entry)
                 
@@ -155,6 +159,35 @@ class HPOSearchEngine:
 
         # 5. Finalize
         return self._finalize_results(results_dir)
+
+    def _save_snapshot(self, snapshot_dir: Path, trial_id: int, split_name: str, 
+                       indices, y_true_df, preds_raw):
+        """
+        [NEW] Saves a lightweight CSV snapshot of predictions for Global Tracking.
+        """
+        try:
+            # Reconstruct angles to get meaningful errors immediately
+            y_true_np = y_true_df.values
+            true_angle = reconstruct_angle(y_true_np[:, 0], y_true_np[:, 1])
+            pred_angle = reconstruct_angle(preds_raw[:, 0], preds_raw[:, 1])
+            
+            raw_diff = np.abs(true_angle - pred_angle)
+            angle_error = np.where(raw_diff > 180, 360 - raw_diff, raw_diff)
+            
+            snapshot_df = pd.DataFrame({
+                'row_index': indices,
+                'pred_sin': preds_raw[:, 0],
+                'pred_cos': preds_raw[:, 1],
+                'pred_angle': pred_angle,
+                'abs_error': angle_error
+            })
+            
+            # Format: trial_001_val.csv
+            filename = f"trial_{trial_id:03d}_{split_name}.csv"
+            snapshot_df.to_csv(snapshot_dir / filename, index=False)
+            
+        except Exception as e:
+            self.logger.warning(f"Failed to save snapshot for trial {trial_id} ({split_name}): {e}")
 
     def _evaluate_config_cv(self, model_name: str, params: dict, X, y, stratify_col) -> dict:
         """Perform K-Fold CV and calculate metrics."""
@@ -215,16 +248,10 @@ class HPOSearchEngine:
             
         return aggregated_results
 
-    def _evaluate_on_set(self, model_name: str, params: dict, X_train, y_train, X_eval, y_eval, prefix='val') -> dict:
-        """Evaluate config on a holdout set (val or test)."""
-        model = ModelFactory.create(model_name, params)
-        model.fit(X_train, y_train)
-        preds = model.predict(X_eval)
-        
-        metrics = self._calculate_metrics(y_eval, preds)
-        
-        # Add prefix
-        return {f'{prefix}_{k}': v for k, v in metrics.items()}
+    def _calculate_metrics_with_prefix(self, y_true, y_pred, prefix) -> dict:
+        """Helper to attach prefix to all metrics."""
+        metrics = self._calculate_metrics(y_true, y_pred)
+        return {f"{prefix}_{k}": v for k, v in metrics.items()}
 
     def _calculate_fold_metrics(self, y_true_df, y_pred_raw, fold_num) -> dict:
         """Calculate metrics for a single fold."""
@@ -233,7 +260,7 @@ class HPOSearchEngine:
         return {f"{prefix}{k}": v for k, v in metrics.items()}
 
     def _calculate_metrics(self, y_true_df, y_pred_raw) -> dict:
-        """Calculate all metrics."""
+        """Calculate all metrics (Full Original Suite)."""
         y_true_np = y_true_df.values
         true_angle = reconstruct_angle(y_true_np[:, 0], y_true_np[:, 1])
         pred_angle = reconstruct_angle(y_pred_raw[:, 0], y_pred_raw[:, 1])
@@ -295,6 +322,7 @@ class HPOSearchEngine:
 
         cols = list(df.columns)
         
+        # Original complex sorting logic restored
         def col_sort_key(c):
             if c in ['config_id', 'config_hash', 'model_name', 'status', 'timestamp']:
                 return (0, c)

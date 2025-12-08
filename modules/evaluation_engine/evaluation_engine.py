@@ -32,7 +32,8 @@ class EvaluationEngine:
         
         # 1. Setup Output Directory
         base_dir = self.config.get('outputs', {}).get('base_results_dir', 'results')
-        output_dir = Path(base_dir) / "07_EVALUATION"
+        # UPDATED: Changed to 08 to match the new pipeline phase numbering
+        output_dir = Path(base_dir) / "08_EVALUATION"
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # 2. Compute All Metrics
@@ -46,7 +47,7 @@ class EvaluationEngine:
         metrics_df = pd.DataFrame([metrics])
         metrics_df.to_excel(output_dir / f"metrics_{split_name}.xlsx", index=False)
         
-        # Save Extremes (only for Test set usually, but useful for Val too)
+        # Save Extremes (useful for debugging outlier cases)
         best_df.to_excel(output_dir / f"best_10_samples_{split_name}.xlsx", index=False)
         worst_df.to_excel(output_dir / f"worst_10_samples_{split_name}.xlsx", index=False)
         
@@ -81,6 +82,7 @@ class EvaluationEngine:
         metrics['median_abs_error'] = np.median(abs_error)
         
         # --- 3. Accuracy Bands ---
+        # Returns keys like 'accuracy_at_5deg' scaled to 0-100%
         metrics.update(self._compute_accuracy_bands(abs_error))
         
         # --- 4. Percentiles ---
@@ -105,21 +107,10 @@ class EvaluationEngine:
         total = len(abs_error)
         
         for b in bands:
-            # For 0, we treat it as strictly 0, or maybe a very small epsilon float logic
             if b == 0:
                 count = np.sum(abs_error == 0)
             else:
                 count = np.sum(abs_error <= b)
             
-            results[f'accuracy_at_{b}deg'] = (count / total) * 100.0
-            
-        return results
-
-    def _identify_extremes(self, df: pd.DataFrame, n: int = 10) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """Identify top N best and worst prediction samples."""
-        sorted_df = df.sort_values('abs_error', ascending=True)
-        
-        best_n = sorted_df.head(n)
-        worst_n = sorted_df.tail(n).iloc[::-1] # Reverse to have worst at top
-        
-        return best_n, worst_n
+            # CRITICAL: Scale to 0-100 for readability in Reporting Engine
+            results[f'accuracy_at_{b}deg'] = (count / total) * 10

@@ -24,6 +24,8 @@ from modules.ensembling_engine import EnsemblingEngine
 from modules.stability_engine import StabilityEngine
 from modules.reporting_engine import ReportingEngine
 from modules.reproducibility_engine import ReproducibilityEngine
+# [NEW IMPORT]
+from modules.global_error_tracking.global_error_tracking import GlobalErrorTrackingEngine
 from utils.exceptions import RiserMLException
 
 
@@ -74,27 +76,42 @@ def main():
         logger.info(f"[OK] Data split: Train={len(train_df)}, Val={len(val_df)}, Test={len(test_df)}")
 
         # ---------------------------------------------------------------
-        # PHASE 3: HYPERPARAMETER OPTIMIZATION (SEARCH)
+        # PHASE 3: HYPERPARAMETER OPTIMIZATION (SEARCH & SNAPSHOT)
         # ---------------------------------------------------------------
         logger.info("\n" + "=" * 60)
-        logger.info("PHASE 3: HYPERPARAMETER OPTIMIZATION (SEARCH)")
+        logger.info("PHASE 3: HYPERPARAMETER OPTIMIZATION")
         logger.info("=" * 60)
 
         hpo_enabled = config.get('hyperparameters', {}).get('enabled', False)
 
         if hpo_enabled:
             hpo_engine = HPOSearchEngine(config, logger)
-            # New signature: includes validation + test sets
+            # This now saves CSV snapshots to disk for every trial
             best_config = hpo_engine.execute(train_df, val_df, test_df, run_id)
         else:
             best_config = {'model': config['models']['native'][0], 'params': {}}
             logger.info("HPO disabled. Using default model configuration.")
 
         # ---------------------------------------------------------------
-        # PHASE 4: HYPERPARAMETER ANALYSIS (VISUALIZATION)
+        # PHASE 4: GLOBAL FAILURE TRACKING (COMPILER)
         # ---------------------------------------------------------------
         logger.info("\n" + "=" * 60)
-        logger.info("PHASE 4: HYPERPARAMETER ANALYSIS (VISUALIZATION)")
+        logger.info("PHASE 4: GLOBAL FAILURE TRACKING (COMPILER)")
+        logger.info("=" * 60)
+
+        # [NEW] This phase reads the snapshots from Phase 3 and builds the Master Excel
+        if hpo_enabled:
+            tracker = GlobalErrorTrackingEngine(config, logger)
+            # We pass raw frames to extract 'Hs' and 'True_Angle' for context
+            tracker.compile_tracking_data(val_df, test_df, run_id)
+        else:
+            logger.info("Skipping Global Tracking (HPO disabled).")
+
+        # ---------------------------------------------------------------
+        # PHASE 5: HYPERPARAMETER ANALYSIS (VISUALIZATION)
+        # ---------------------------------------------------------------
+        logger.info("\n" + "=" * 60)
+        logger.info("PHASE 5: HYPERPARAMETER ANALYSIS")
         logger.info("=" * 60)
 
         if hpo_enabled:
@@ -102,13 +119,13 @@ def main():
             hpo_analyzer.analyze(run_id)
             logger.info("[OK] HPO analysis complete")
         else:
-            logger.info("Skipping Phase 4 (HPO disabled)")
+            logger.info("Skipping Phase 5 (HPO disabled)")
 
         # ---------------------------------------------------------------
-        # PHASE 5: MODEL TRAINING
+        # PHASE 6: MODEL TRAINING (BEST MODEL)
         # ---------------------------------------------------------------
         logger.info("\n" + "=" * 60)
-        logger.info("PHASE 5: MODEL TRAINING")
+        logger.info("PHASE 6: MODEL TRAINING")
         logger.info("=" * 60)
 
         training_engine = TrainingEngine(config, logger)
@@ -116,10 +133,10 @@ def main():
         logger.info(f"[OK] Model trained: {best_config.get('model')}")
 
         # ---------------------------------------------------------------
-        # PHASE 6: PREDICTION
+        # PHASE 7: PREDICTION
         # ---------------------------------------------------------------
         logger.info("\n" + "=" * 60)
-        logger.info("PHASE 6: PREDICTION")
+        logger.info("PHASE 7: PREDICTION")
         logger.info("=" * 60)
 
         prediction_engine = PredictionEngine(config, logger)
@@ -128,10 +145,10 @@ def main():
         logger.info("[OK] Predictions generated")
 
         # ---------------------------------------------------------------
-        # PHASE 7: EVALUATION
+        # PHASE 8: EVALUATION
         # ---------------------------------------------------------------
         logger.info("\n" + "=" * 60)
-        logger.info("PHASE 7: EVALUATION")
+        logger.info("PHASE 8: EVALUATION")
         logger.info("=" * 60)
 
         eval_engine = EvaluationEngine(config, logger)
@@ -144,10 +161,10 @@ def main():
         logger.info(f"Test Accuracy@5°:       {metrics_test['accuracy_at_5deg']:.2f}%")
 
         # ---------------------------------------------------------------
-        # PHASE 8: DIAGNOSTICS
+        # PHASE 9: DIAGNOSTICS
         # ---------------------------------------------------------------
         logger.info("\n" + "=" * 60)
-        logger.info("PHASE 8: DIAGNOSTICS")
+        logger.info("PHASE 9: DIAGNOSTICS")
         logger.info("=" * 60)
 
         diag_engine = DiagnosticsEngine(config, logger)
@@ -156,10 +173,10 @@ def main():
         logger.info("[OK] Diagnostic plots generated")
 
         # ---------------------------------------------------------------
-        # PHASE 9: ERROR ANALYSIS
+        # PHASE 10: ERROR ANALYSIS
         # ---------------------------------------------------------------
         logger.info("\n" + "=" * 60)
-        logger.info("PHASE 9: ERROR ANALYSIS")
+        logger.info("PHASE 10: ERROR ANALYSIS")
         logger.info("=" * 60)
 
         ea_engine = ErrorAnalysisEngine(config, logger)
@@ -168,10 +185,10 @@ def main():
         logger.info("[OK] Error analysis complete")
 
         # ---------------------------------------------------------------
-        # PHASE 10: ADVANCED ANALYTICS
+        # PHASE 11: ADVANCED ANALYTICS
         # ---------------------------------------------------------------
         logger.info("\n" + "=" * 60)
-        logger.info("PHASE 10: ADVANCED ANALYTICS")
+        logger.info("PHASE 11: ADVANCED ANALYTICS")
         logger.info("=" * 60)
 
         boot_engine = BootstrappingEngine(config, logger)
@@ -184,10 +201,10 @@ def main():
         stab_engine.run_stability_analysis(validated_data, run_id)
 
         # ---------------------------------------------------------------
-        # PHASE 11: REPORTING
+        # PHASE 12: REPORTING
         # ---------------------------------------------------------------
         logger.info("\n" + "=" * 60)
-        logger.info("PHASE 11: REPORTING")
+        logger.info("PHASE 12: REPORTING")
         logger.info("=" * 60)
 
         hpo_artifacts = _prepare_hpo_artifacts(results_dir, hpo_enabled, logger)
@@ -205,10 +222,10 @@ def main():
         logger.info(f"[OK] PDF Report: {report_path}")
 
         # ---------------------------------------------------------------
-        # PHASE 12: REPRODUCIBILITY
+        # PHASE 13: REPRODUCIBILITY (Renumbered)
         # ---------------------------------------------------------------
         logger.info("\n" + "=" * 60)
-        logger.info("PHASE 12: REPRODUCIBILITY PACKAGING")
+        logger.info("PHASE 13: REPRODUCIBILITY PACKAGING")
         logger.info("=" * 60)
 
         repro_engine = ReproducibilityEngine(config, logger)
@@ -251,7 +268,25 @@ def _prepare_hpo_artifacts(results_dir: Path, enabled: bool, logger) -> dict:
     if not enabled:
         return artifacts
 
-    analysis_dir = results_dir / "04_HYPERPARAMETER_ANALYSIS"
+    # NOTE: Path updated to match new pipeline structure (05_HYPERPARAMETER_ANALYSIS)
+    # The analyzer will save to 05, so we look there.
+    # However, to be safe, we check if the directory exists.
+    # Since we shifted phases, HPO Analysis is likely in 05 now.
+    
+    # Check both old and new possible locations just in case analyzer naming varies
+    potential_dirs = [
+        results_dir / "05_HYPERPARAMETER_ANALYSIS",
+        results_dir / "04_HYPERPARAMETER_ANALYSIS"
+    ]
+    
+    analysis_dir = None
+    for d in potential_dirs:
+        if d.exists():
+            analysis_dir = d
+            break
+            
+    if not analysis_dir:
+        return artifacts
 
     # Collect plots
     viz_dir = analysis_dir / "visualizations"
@@ -289,18 +324,36 @@ def _prepare_hpo_artifacts(results_dir: Path, enabled: bool, logger) -> dict:
 
 def _collect_diagnostic_plots(results_dir: Path):
     """Collect standard diagnostic plot paths."""
-    diag_dir = results_dir / "07_DIAGNOSTICS"
+    # Updated paths for standard diagnostics (Phase 9)
+    diag_dir = results_dir / "09_DIAGNOSTICS" 
+    
+    # Fallback to search if phase numbering changed logic in other files
+    if not diag_dir.exists():
+        # Try finding by name pattern if hardcoded path fails
+        found = list(results_dir.glob("*_DIAGNOSTICS"))
+        if found:
+            diag_dir = found[0]
+
     plots = []
 
     preferred = [
         diag_dir / "scatter_plots/actual_vs_pred_test.png",
-    diag_dir / "distribution_plots/error_hist_test.png",
-    results_dir / "10_ADVANCED_ANALYTICS/bootstrapping/test/bootstrap_dist_cmae.png"
+        diag_dir / "distribution_plots/error_hist_test.png",
+        # Phase 11 is now Advanced Analytics
+        results_dir / "11_ADVANCED_ANALYTICS/bootstrapping/test/bootstrap_dist_cmae.png"
     ]
 
     for p in preferred:
+        # Check explicit path first
         if p.exists():
             plots.append(str(p))
+        else:
+            # Flexible check for analytics folder shift
+            p_str = str(p)
+            if "10_ADVANCED" in p_str:
+                p_alt = Path(p_str.replace("10_ADVANCED", "11_ADVANCED"))
+                if p_alt.exists():
+                    plots.append(str(p_alt))
 
     return plots
 

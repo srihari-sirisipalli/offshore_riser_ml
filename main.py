@@ -2,6 +2,8 @@ import sys
 import logging
 import json
 import pandas as pd
+import numpy as np # Added for version check
+import sklearn # Added for version check
 from pathlib import Path
 
 # Add project root to Python path
@@ -30,6 +32,39 @@ from utils.exceptions import RiserMLException
 
 
 # =====================================================================
+#                   H E L P E R   F U N C T I O N S
+# =====================================================================
+def _check_library_versions(logger_instance):
+    expected_versions = {}
+    try:
+        with open('requirements.txt', 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#'):
+                    if '==' in line:
+                        pkg, version = line.split('==')
+                        expected_versions[pkg.strip()] = version.strip()
+    except FileNotFoundError:
+        logger_instance.warning("requirements.txt not found. Cannot verify library versions.")
+        return
+
+    checks = {
+        "numpy": np.__version__,
+        "pandas": pd.__version__,
+        "scikit-learn": sklearn.__version__,
+    }
+
+    for pkg_name, installed_version in checks.items():
+        if pkg_name in expected_versions:
+            expected = expected_versions[pkg_name]
+            if installed_version != expected:
+                logger_instance.warning(
+                    f"Version mismatch for {pkg_name}. Expected {expected}, "
+                    f"but found {installed_version}. Please ensure your environment "
+                    "matches requirements.txt by running 'pip install -r requirements.txt'."
+                )
+
+# =====================================================================
 #                        PIPELINE MAIN FUNCTION
 # =====================================================================
 def main():
@@ -48,6 +83,9 @@ def main():
         logging_configurator = LoggingConfigurator(config)
         logging_configurator.setup()
         logger = logging_configurator.get_logger('pipeline')
+
+        # FIX #89: Check library versions early in the pipeline.
+        _check_library_versions(logger)
 
         base_dir = config.get('outputs', {}).get('base_results_dir', 'results')
         results_dir = Path(base_dir)
@@ -251,8 +289,9 @@ def main():
 
     except Exception as e:
         print(f"\n[UNEXPECTED ERROR] {str(e)}")
-        import traceback
-        traceback.print_exc()
+        # FIX #45: Remove printing full traceback to console. Rely on logger for full details.
+        # import traceback
+        # traceback.print_exc()
         if 'logger' in locals():
             logger.critical(f"Unexpected: {str(e)}", exc_info=True)
         sys.exit(1)

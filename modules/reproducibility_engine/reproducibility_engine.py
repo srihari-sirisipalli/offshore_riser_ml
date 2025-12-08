@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import json
 import platform
+import time # Added for FIX #36
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -42,12 +43,24 @@ class ReproducibilityEngine:
         source_root = Path(base_dir)
         
         # The package goes inside the results folder
-        package_dir = source_root / "11_REPRODUCIBILITY_PACKAGE"
+        package_dir = source_root / "13_REPRODUCIBILITY_PACKAGE"
         
         # 2. Prepare Directory
         try:
             if package_dir.exists():
-                shutil.rmtree(package_dir)
+                # FIX #36: Add retry logic for rmtree on Windows to handle file locks.
+                if platform.system() == "Windows":
+                    for _ in range(5): # Retry a few times
+                        try:
+                            shutil.rmtree(package_dir)
+                            break
+                        except OSError as e:
+                            self.logger.warning(f"Failed to remove directory {package_dir} due to OS error: {e}. Retrying in 0.5s...")
+                            time.sleep(0.5) # Wait a bit before retrying
+                    else: # If loop completes without break
+                        raise OSError(f"Failed to remove directory {package_dir} after multiple retries.")
+                else: # Non-Windows or if retry successful
+                    shutil.rmtree(package_dir)
             package_dir.mkdir(parents=True, exist_ok=True)
         except Exception as e:
             self.logger.error(f"Failed to create package directory: {e}")
@@ -132,7 +145,8 @@ class ReproducibilityEngine:
                 [sys.executable, '-m', 'pip', 'freeze'],
                 capture_output=True,
                 text=True,
-                check=False
+                check=False,
+                timeout=60 # FIX #86: Add a timeout to prevent hanging.
             )
             
             if result.returncode == 0:

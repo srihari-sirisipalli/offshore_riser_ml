@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 from scipy import stats
 from typing import Optional
+from contextlib import contextmanager # Added for FIX #78
 
 class DiagnosticsEngine:
     """
@@ -21,9 +22,29 @@ class DiagnosticsEngine:
         self.dpi = self.diag_config.get('dpi', 200)
         self.fmt = self.diag_config.get('save_format', 'png')
         
-        # Set style
-        sns.set_theme(style="whitegrid")
-        plt.rcParams.update({'figure.max_open_warning': 0})
+        # FIX #78: Removed global style setting from __init__. Now managed by _plot_context.
+        # sns.set_theme(style="whitegrid")
+        # plt.rcParams.update({'figure.max_open_warning': 0})
+
+    @contextmanager
+    def _plot_context(self):
+        """
+        FIX #78: Context manager to apply and then reset plot settings.
+        Ensures global matplotlib/seaborn settings don't leak.
+        """
+        # Save current rcParams and seaborn theme
+        original_rcParams = plt.rcParams.copy()
+        original_seaborn_theme = sns.axes_style() # Captures current seaborn style
+        try:
+            # Apply engine's specific settings
+            sns.set_theme(style="whitegrid")
+            plt.rcParams.update({'figure.max_open_warning': 0})
+            yield
+        finally:
+            # Restore original rcParams and seaborn theme
+            plt.rcParams.update(original_rcParams)
+            sns.set_theme(style=original_seaborn_theme) # Restore seaborn theme
+            plt.close('all') # Close all figures created within this context
 
     def generate_all(self, predictions: pd.DataFrame, split_name: str, run_id: str) -> None:
         """
@@ -31,42 +52,44 @@ class DiagnosticsEngine:
         """
         self.logger.info(f"Generating diagnostics for {split_name} set...")
         
-        # 1. Setup Directories
-        base_dir = self.config.get('outputs', {}).get('base_results_dir', 'results')
-        root_dir = Path(base_dir) / "08_DIAGNOSTICS"
-        
-        dirs = {
-            'index': root_dir / "index_plots",
-            'scatter': root_dir / "scatter_plots",
-            'residual': root_dir / "residual_plots",
-            'dist': root_dir / "distribution_plots",
-            'qq': root_dir / "qq_plots",
-            'per_hs': root_dir / "per_hs_plots"
-        }
-        
-        for d in dirs.values():
-            d.mkdir(parents=True, exist_ok=True)
+        # FIX #78: Wrap all plotting logic in the context manager.
+        with self._plot_context():
+            # 1. Setup Directories
+            base_dir = self.config.get('outputs', {}).get('base_results_dir', 'results')
+            root_dir = Path(base_dir) / "09_DIAGNOSTICS"
             
-        # 2. Generate Plots based on flags
-        if self.diag_config.get('generate_index_plots', True):
-            self._plot_index_vs_values(predictions, split_name, dirs['index'])
+            dirs = {
+                'index': root_dir / "index_plots",
+                'scatter': root_dir / "scatter_plots",
+                'residual': root_dir / "residual_plots",
+                'dist': root_dir / "distribution_plots",
+                'qq': root_dir / "qq_plots",
+                'per_hs': root_dir / "per_hs_plots"
+            }
             
-        if self.diag_config.get('generate_scatter_plots', True):
-            self._plot_scatter(predictions, split_name, dirs['scatter'])
-            
-        if self.diag_config.get('generate_residual_plots', True):
-            self._plot_residuals(predictions, split_name, dirs['residual'])
-            
-        if self.diag_config.get('generate_distribution_plots', True):
-            self._plot_distributions(predictions, split_name, dirs['dist'])
-            
-        if self.diag_config.get('generate_qq_plots', True):
-            self._plot_qq(predictions, split_name, dirs['qq'])
-            
-        if self.diag_config.get('generate_per_hs_accuracy', True):
-            self._plot_per_hs_analysis(predictions, split_name, dirs['per_hs'])
-            
-        self.logger.info(f"Diagnostics generation complete for {split_name}.")
+            for d in dirs.values():
+                d.mkdir(parents=True, exist_ok=True)
+                
+            # 2. Generate Plots based on flags
+            if self.diag_config.get('generate_index_plots', True):
+                self._plot_index_vs_values(predictions, split_name, dirs['index'])
+                
+            if self.diag_config.get('generate_scatter_plots', True):
+                self._plot_scatter(predictions, split_name, dirs['scatter'])
+                
+            if self.diag_config.get('generate_residual_plots', True):
+                self._plot_residuals(predictions, split_name, dirs['residual'])
+                
+            if self.diag_config.get('generate_distribution_plots', True):
+                self._plot_distributions(predictions, split_name, dirs['dist'])
+                
+            if self.diag_config.get('generate_qq_plots', True):
+                self._plot_qq(predictions, split_name, dirs['qq'])
+                
+            if self.diag_config.get('generate_per_hs_accuracy', True):
+                self._plot_per_hs_analysis(predictions, split_name, dirs['per_hs'])
+                
+            self.logger.info(f"Diagnostics generation complete for {split_name}.")
 
     def _save_fig(self, output_dir: Path, filename: str):
         """Helper to save and close figures."""
@@ -186,12 +209,11 @@ class DiagnosticsEngine:
 
             plt.figure(figsize=(12, 6))
 
+            # FIXED: Removed deprecated hue parameter that was causing warnings
             sns.boxplot(
                 data=df,
                 x='hs_bin',
                 y='abs_error',
-                hue='hs_bin',      # seaborn requirement for palette
-                legend=False,
                 palette="Blues"
             )
 
@@ -199,4 +221,3 @@ class DiagnosticsEngine:
             plt.xlabel('Hs Bin')
             plt.ylabel('Abs Error (deg)')
             self._save_fig(output_dir, f"error_vs_hs_bin_{split}")
-

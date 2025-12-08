@@ -10,6 +10,7 @@ from matplotlib.patches import Rectangle
 from scipy.interpolate import griddata
 from mpl_toolkits.mplot3d import Axes3D 
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+from contextlib import contextmanager # Added for FIX #97
 
 class HyperparameterAnalyzer:
     """
@@ -39,7 +40,22 @@ class HyperparameterAnalyzer:
         self.test_metrics = ['test_cmae_deg', 'test_crmse_deg', 'test_max_error_deg']
         
         self.primary_metric = 'cv_cmae_deg_mean'
-        
+
+    @contextmanager
+    def _plot_context(self):
+        """
+        FIX #97: Context manager to save and restore Matplotlib/Seaborn styles.
+        Ensures global settings don't leak.
+        """
+        original_rcParams = plt.rcParams.copy()
+        original_seaborn_style = sns.axes_style()
+        try:
+            yield
+        finally:
+            plt.rcParams.update(original_rcParams)
+            sns.set_style(original_seaborn_style)
+            plt.close('all') # Close all figures created within this context
+            
     def analyze(self, run_id: str) -> None:
         """Execute full analysis on HPO results."""
         base_dir = self.config.get('outputs', {}).get('base_results_dir', 'results')
@@ -51,7 +67,7 @@ class HyperparameterAnalyzer:
             return
 
         self.logger.info("Starting Hyperparameter Analysis...")
-        self.output_dir = Path(base_dir) / "04_HYPERPARAMETER_ANALYSIS"
+        self.output_dir = Path(base_dir) / "05_HYPERPARAMETER_ANALYSIS"
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
         # Load data
@@ -88,10 +104,12 @@ class HyperparameterAnalyzer:
             # Get top configs for this model
             top_configs = self._get_top_configs(model_df, self.optimal_top_percent)
             
-            # Generate plots for each metric type
-            for metric_type, metrics in [('CV', available_cv), ('Val', available_val), ('Test', available_test)]:
-                for metric in metrics:
-                    self._visualize_model_landscape(model_df, top_configs, model, metric, metric_type)
+            # FIX #97: Wrap plotting in a context manager to prevent style leaks.
+            with self._plot_context():
+                # Generate plots for each metric type
+                for metric_type, metrics in [('CV', available_cv), ('Val', available_val), ('Test', available_test)]:
+                    for metric in metrics:
+                        self._visualize_model_landscape(model_df, top_configs, model, metric, metric_type)
             
         self.logger.info(f"HPO Analysis complete. Artifacts in {self.output_dir}")
 
@@ -241,7 +259,13 @@ class HyperparameterAnalyzer:
         
         name1 = p1.replace('param_', '')
         name2 = p2.replace('param_', '')
-        base_name = f"{name1}_vs_{name2}"
+
+        # FIX #63: Sanitize parameter names for safe use in filenames.
+        # Replace common invalid filename characters with underscores.
+        name1_sanitized = "".join([c if c.isalnum() or c in ['-', '_', '.'] else '_' for c in name1])
+        name2_sanitized = "".join([c if c.isalnum() or c in ['-', '_', '.'] else '_' for c in name2])
+        
+        base_name = f"{name1_sanitized}_vs_{name2_sanitized}"
         
         # Always generate heatmap
         for style in self.highlighting_styles:
@@ -302,6 +326,13 @@ class HyperparameterAnalyzer:
     def _plot_heatmap(self, df: pd.DataFrame, top_df: pd.DataFrame,
                      x_col: str, y_col: str, z_col: str, output_path: Path, style: str):
         """Generate heatmap with highlighting."""
+        # FIX #28: Warn if duplicate (x,y) combinations are found.
+        if df.duplicated(subset=[x_col, y_col]).any():
+            self.logger.warning(
+                f"Duplicate (x,y) combinations found for {x_col} and {y_col}. "
+                "The pivot table will use `aggfunc='mean'` to aggregate, "
+                "which might hide repeated configurations."
+            )
         try:
             pivot = df.pivot_table(index=y_col, columns=x_col, values=z_col, aggfunc='mean')
         except Exception as e:
@@ -385,10 +416,9 @@ class HyperparameterAnalyzer:
         y = plot_df[y_col].values
         z = plot_df[z_col].values
 
-        # --- FIX: Check for variance ---
+        # FIXED: Check for variance and close figure on early return
         if len(np.unique(x)) < 2 or len(np.unique(y)) < 2:
             return 
-        # -------------------------------
         
         try:
             xi = np.linspace(x.min(), x.max(), 100)
@@ -420,6 +450,12 @@ class HyperparameterAnalyzer:
             
             width = opt_x_max - opt_x_min if opt_x_max > opt_x_min else (x.max()-x.min())*0.05
             height = opt_y_max - opt_y_min if opt_y_max > opt_y_min else (y.max()-y.min())*0.05
+
+            # FIX #85: Ensure width and height are not zero for the rectangle.
+            if width == 0:
+                width = 0.1 # A small default width
+            if height == 0:
+                height = 0.1 # A small default height
             
             rect = Rectangle((opt_x_min, opt_y_min), width, height, 
                            linewidth=3, edgecolor='red', facecolor='none', 
@@ -465,12 +501,12 @@ class HyperparameterAnalyzer:
         y = plot_df[y_col].values
         z = plot_df[z_col].values
         
-        # --- FIX: Check for variance ---
-        if len(np.unique(x)) < 2 or len(np.unique(y)) < 2:
-            return 
-        # -------------------------------
-
         fig = plt.figure(figsize=(14, 12))
+        # FIXED: Check for variance and close figure on early return (FIX #4, #35)
+        if len(np.unique(x)) < 2 or len(np.unique(y)) < 2:
+            plt.close(fig) 
+            return 
+
         ax = fig.add_subplot(111, projection='3d')
 
         try:

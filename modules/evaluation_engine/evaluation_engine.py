@@ -32,7 +32,7 @@ class EvaluationEngine:
         
         # 1. Setup Output Directory
         base_dir = self.config.get('outputs', {}).get('base_results_dir', 'results')
-        # UPDATED: Changed to 08 to match the new pipeline phase numbering
+        # Ensure Phase 08 matches pipeline sequence
         output_dir = Path(base_dir) / "08_EVALUATION"
         output_dir.mkdir(parents=True, exist_ok=True)
         
@@ -40,6 +40,7 @@ class EvaluationEngine:
         metrics = self.compute_metrics(predictions)
         
         # 3. Identify Extremes (Best/Worst samples)
+        # FIX: Critical Bug #17 - Method was called but not defined
         best_df, worst_df = self._identify_extremes(predictions)
         
         # 4. Save Artifacts
@@ -51,13 +52,18 @@ class EvaluationEngine:
         best_df.to_excel(output_dir / f"best_10_samples_{split_name}.xlsx", index=False)
         worst_df.to_excel(output_dir / f"worst_10_samples_{split_name}.xlsx", index=False)
         
-        self.logger.info(f"Evaluation complete. {split_name} CMAE: {metrics['cmae']:.4f}°")
+        cmae_val = metrics.get('cmae', 0.0)
+        self.logger.info(f"Evaluation complete. {split_name} CMAE: {cmae_val:.4f}°")
         return metrics
 
     def compute_metrics(self, df: pd.DataFrame) -> Dict[str, float]:
         """
         Calculate full suite of metrics: Circular, Linear, Bands, Components.
         """
+        if df.empty:
+            self.logger.warning("Empty predictions dataframe provided for evaluation.")
+            return {}
+
         # Extract columns
         true_angle = df['true_angle'].values
         pred_angle = df['pred_angle'].values
@@ -86,8 +92,9 @@ class EvaluationEngine:
         metrics.update(self._compute_accuracy_bands(abs_error))
         
         # --- 4. Percentiles ---
+        # FIX: Low Bug #77 - Use nanpercentile to handle potential NaNs safely
         for p in [50, 75, 90, 95, 99]:
-            metrics[f'percentile_{p}'] = np.percentile(abs_error, p)
+            metrics[f'percentile_{p}'] = np.nanpercentile(abs_error, p)
             
         # --- 5. Component Metrics (Sin/Cos) ---
         metrics['mae_sin'] = np.mean(np.abs(true_sin - pred_sin))
@@ -106,11 +113,38 @@ class EvaluationEngine:
         results = {}
         total = len(abs_error)
         
+        # FIX: High Bug #21 - Prevent Division by Zero
+        if total == 0:
+            for b in bands:
+                results[f'accuracy_at_{b}deg'] = 0.0
+            return results
+
         for b in bands:
             if b == 0:
                 count = np.sum(abs_error == 0)
             else:
                 count = np.sum(abs_error <= b)
             
-            # CRITICAL: Scale to 0-100 for readability in Reporting Engine
-            results[f'accuracy_at_{b}deg'] = (count / total) * 10
+            # FIX: Critical Bug #1 - Changed multiplier from 10 to 100
+            results[f'accuracy_at_{b}deg'] = (count / total) * 100
+            
+        return results
+
+    def _identify_extremes(self, df: pd.DataFrame, n: int = 10) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Identify best and worst predictions based on absolute error.
+        Fixes Critical Bug #17 (Method Missing).
+        """
+        if df.empty or 'abs_error' not in df.columns:
+            return pd.DataFrame(), pd.DataFrame()
+            
+        # Sort by absolute error
+        sorted_df = df.sort_values('abs_error', ascending=True)
+        
+        # Best = Lowest error (Top of sorted)
+        best_df = sorted_df.head(n).copy()
+        
+        # Worst = Highest error (Bottom of sorted, reversed)
+        worst_df = sorted_df.tail(n).iloc[::-1].copy()
+        
+        return best_df, worst_df

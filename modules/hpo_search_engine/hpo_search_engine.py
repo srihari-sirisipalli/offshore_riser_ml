@@ -60,8 +60,8 @@ class HPOSearchEngine:
         # Create subdirectories
         progress_dir = output_dir / "progress"
         results_dir = output_dir / "results"
-        progress_dir.mkdir(exist_ok=True)
-        results_dir.mkdir(exist_ok=True)
+        progress_dir.mkdir(parents=True, exist_ok=True)
+        results_dir.mkdir(parents=True, exist_ok=True)
         
         # 2. Setup Resume Capability
         self.progress_file = progress_dir / "hpo_progress.jsonl"
@@ -228,19 +228,17 @@ class HPOSearchEngine:
             aggregated_results.update(fr)
             
         if fold_results_list:
-            metric_names = set()
-            for k in fold_results_list[0].keys():
-                parts = k.split('_')
-                if len(parts) > 2:
-                    metric_name = '_'.join(parts[2:])
-                    metric_names.add(metric_name)
-                
-            for metric in metric_names:
-                values = []
-                for fr in fold_results_list:
-                    for k, v in fr.items():
-                        if k.endswith(metric) and not k.startswith("cv_"):
-                            values.append(v)
+            # FIX #80: More robust metric name extraction.
+            # Assumes keys are like 'fold_1_cmae_deg'. Extracts 'cmae_deg'.
+            base_metrics = set('_'.join(k.split('_')[2:]) for k in fold_results_list[0])
+
+            for metric in base_metrics:
+                # Collect values for this specific metric from all folds.
+                values = [
+                    v for fr in fold_results_list 
+                    for k, v in fr.items() 
+                    if '_'.join(k.split('_')[2:]) == metric
+                ]
                 
                 if values:
                     aggregated_results[f'cv_{metric}_mean'] = np.mean(values)
@@ -309,11 +307,12 @@ class HPOSearchEngine:
             
         data = []
         with open(self.progress_file, 'r') as f:
-            for line in f:
+            # FIX #75: Add logging for corrupted lines.
+            for i, line in enumerate(f):
                 try:
                     data.append(json.loads(line))
-                except:
-                    continue
+                except json.JSONDecodeError as e:
+                    self.logger.warning(f"Skipping corrupted line {i+1} in HPO progress file: {e}")
                     
         df = pd.DataFrame(data)
         

@@ -33,7 +33,7 @@ class PredictionEngine:
         
         # 1. Setup Output Directory
         base_dir = self.config.get('outputs', {}).get('base_results_dir', 'results')
-        output_dir = Path(base_dir) / "06_PREDICTIONS"
+        output_dir = Path(base_dir) / "07_PREDICTIONS"
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # 2. Prepare Features
@@ -45,6 +45,23 @@ class PredictionEngine:
         X = data_df.drop(columns=drop_cols, errors='ignore')
         
         try:
+            # FIX #31, #65: Ensure feature consistency and order match the trained model.
+            if hasattr(model, 'feature_names_in_'):
+                model_features = model.feature_names_in_
+                
+                # Check for missing features in the prediction set.
+                missing_features = set(model_features) - set(X.columns)
+                if missing_features:
+                    raise PredictionError(f"Missing features required by the model: {list(missing_features)}")
+                
+                # Ensure the column order matches the model's expectation.
+                X = X[model_features]
+            else:
+                self.logger.warning(
+                    "Model does not have 'feature_names_in_' attribute. "
+                    "Cannot guarantee feature order consistency for prediction."
+                )
+
             # 3. Model Inference (Sin/Cos)
             # Returns shape (n_samples, 2)
             preds = model.predict(X)

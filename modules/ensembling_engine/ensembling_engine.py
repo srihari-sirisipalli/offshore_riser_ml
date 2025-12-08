@@ -47,7 +47,7 @@ class EnsemblingEngine:
         
         # 1. Setup Output Directory
         base_dir = self.config.get('outputs', {}).get('base_results_dir', 'results')
-        output_dir = Path(base_dir) / "09_ADVANCED_ANALYTICS" / "ensembling"
+        output_dir = Path(base_dir) / "11_ADVANCED_ANALYTICS" / "ensembling"
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # 2. Validate Inputs
@@ -93,10 +93,10 @@ class EnsemblingEngine:
         base_idx = predictions_list[0].index
         for i, df in enumerate(predictions_list[1:]):
             if len(df) != len(base_idx):
-                raise ValueError(f"Model {i+1} has length {len(df)}, expected {len(base_idx)}.")
-            # If indices don't match, we might be merging wrong rows
-            # In production, we'd enforce exact index matching or sort.
-            # Here we assume order is preserved from PredictionEngine.
+                raise ValueError(f"Model {i+1} (index: {df.index.name if df.index.name else 'Unnamed'}) has length {len(df)}, expected {len(base_idx)}. Lengths must match.")
+            # FIX #56: Check for actual index values, not just length.
+            if not df.index.equals(base_idx):
+                raise ValueError(f"Model {i+1} (index: {df.index.name if df.index.name else 'Unnamed'}) indices do not match the base model indices. Indices must be identical for ensembling. Mismatch found at index position {i}.")
 
     def _simple_average(self, predictions_list: List[pd.DataFrame]) -> pd.DataFrame:
         """Average Sin and Cos components."""
@@ -120,15 +120,34 @@ class EnsemblingEngine:
         scheme = self.ens_config.get('weighting_scheme', 'inverse_error')
         
         if scheme == 'inverse_error':
-            # Weight = 1 / CMAE (avoid div by zero)
-            cmaes = np.array([m.get('cmae', 1.0) for m in metrics_list])
-            weights = 1.0 / (cmaes + 1e-6)
+            # FIX #25: Handle CMAE=0 specifically and use a more robust epsilon.
+            # Get CMAEs, falling back to 1.0 if not found (or to prevent div by zero later if all models are bad)
+            cmaes = np.array([m.get('cmae', m.get('cmae_deg', 1.0)) for m in metrics_list])
+            
+            # Identify models with perfect predictions (CMAE = 0)
+            perfect_models_mask = (cmaes == 0)
+            num_perfect_models = np.sum(perfect_models_mask)
+
+            if num_perfect_models > 0:
+                # If perfect models exist, give them equal weight and zero weight to others
+                weights = np.zeros_like(cmaes, dtype=float)
+                weights[perfect_models_mask] = 1.0 / num_perfect_models if num_perfect_models > 0 else 0.0
+            else:
+                # For non-perfect models, use inverse of CMAE with a small epsilon for stability
+                # Using 0.001 as epsilon to prevent extreme weights and handle near-zero CMAEs gracefully
+                weights = 1.0 / (cmaes + 0.001) 
         else:
             # Default to uniform if scheme unknown
             weights = np.ones(len(predictions_list))
             
         # Normalize weights
-        weights = weights / np.sum(weights)
+        # Avoid division by zero if all weights sum to zero (e.g., if cmaes were all inf)
+        sum_weights = np.sum(weights)
+        if sum_weights == 0:
+            self.logger.warning("Sum of ensemble weights is zero. Defaulting to uniform weights.")
+            weights = np.ones(len(predictions_list)) / len(predictions_list) # Uniform weights
+        else:
+            weights = weights / sum_weights
         
         self.logger.info(f"Ensemble Weights: {weights}")
         

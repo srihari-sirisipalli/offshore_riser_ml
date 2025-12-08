@@ -179,12 +179,18 @@ class ReportingEngine:
     
     def _create_kpi_table(self, data: Dict) -> Table:
         """Compact KPI table for Executive Summary."""
-        m_test = data.get('metrics', {}).get('test', {})
+        # FIXED: Safe dictionary access with proper None checks
+        metrics = data.get('metrics', {})
+        if not metrics or not isinstance(metrics, dict):
+            metrics = {}
         
-        # Safe Retrieval with corrected key lookup
+        m_test = metrics.get('test', {})
+        if not m_test or not isinstance(m_test, dict):
+            m_test = {}
+        
+        # Safe retrieval with corrected key lookup
         cmae = m_test.get('cmae', m_test.get('cmae_deg', 0.0))
-        # FIX: Ensure we look for 'accuracy_at_5deg' as produced by EvaluationEngine
-        acc_5 = m_test.get('accuracy_at_5deg', 0.0) 
+        acc_5 = m_test.get('accuracy_at_5deg', 0.0)
         
         kpi_data = [
             ["Metric", "Test Result", "Target / Status"],
@@ -206,15 +212,27 @@ class ReportingEngine:
 
     def _create_full_metrics_table(self, metrics: Dict) -> Table:
         """Detailed comparison table."""
-        # Helper to find keys
+        # FIXED: Safe access with None checks
+        if not metrics or not isinstance(metrics, dict):
+            metrics = {}
+            
+        val_m = metrics.get('val', {})
+        if not val_m or not isinstance(val_m, dict):
+            val_m = {}
+            
+        test_m = metrics.get('test', {})
+        if not test_m or not isinstance(test_m, dict):
+            test_m = {}
+        
+        # Helper to find keys safely
         def find_val(d, candidates):
+            if not d or not isinstance(d, dict):
+                return 0.0
             for k in candidates:
-                if k in d: return d[k]
+                if k in d: 
+                    return d[k]
             return 0.0
 
-        val_m = metrics.get('val', {})
-        test_m = metrics.get('test', {})
-        
         rows = [["Metric", "Validation Set", "Test Set", "Delta"]]
         
         # Define metrics to show (Standardized Keys)
@@ -250,11 +268,23 @@ class ReportingEngine:
 
     def _generate_smart_narrative(self, data: Dict) -> str:
         """Generates dynamic text based on metrics."""
-        m = data.get('metrics', {}).get('test', {})
+        # FIXED: Safe access with None checks
+        metrics = data.get('metrics', {})
+        if not metrics or not isinstance(metrics, dict):
+            metrics = {}
+        
+        m = metrics.get('test', {})
+        if not m or not isinstance(m, dict):
+            m = {}
+        
         cmae = m.get('cmae', m.get('cmae_deg', 0))
         acc = m.get('accuracy_at_5deg', 0)
         
-        model_name = data.get('model_info', {}).get('model', 'The model')
+        model_info = data.get('model_info', {})
+        if not model_info or not isinstance(model_info, dict):
+            model_info = {}
+        
+        model_name = model_info.get('model', 'The model')
         
         text = f"The optimized <b>{model_name}</b> architecture achieved a test CMAE of <b>{cmae:.4f}°</b>. "
         
@@ -324,10 +354,15 @@ class ReportingEngine:
         for p_str in image_paths:
             path = Path(p_str)
             if not path.exists():
+                self.logger.warning(f"Image file not found: {path}. Skipping.")
                 continue
                 
-            # Create Image Flowable
-            img = Image(str(path), width=img_width, height=img_height, kind='proportional')
+            try:
+                # Create Image Flowable
+                img = Image(str(path), width=img_width, height=img_height, kind='proportional')
+            except Exception as e:
+                self.logger.warning(f"Failed to load image {path}: {e}. Skipping.")
+                continue
             
             # Caption
             caption_text = path.stem.replace('_', ' ').title()

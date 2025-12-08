@@ -41,19 +41,23 @@ class LoggingConfigurator:
         self.log_dir.mkdir(exist_ok=True)
         root_logger = logging.getLogger()
         root_logger.setLevel(self.log_level)
-        root_logger.handlers = []  # Clear existing
+        
+        # FIX #82: Iterate and remove handlers to avoid disrupting other modules' logging,
+        # while preventing duplicate handlers if setup is called multiple times.
+        for handler in root_logger.handlers[:]: # Iterate over a copy to safely modify list
+            root_logger.removeHandler(handler)
         
         # Console Handler with UTF-8 support for Windows
         if self.config.get('log_to_console', True):
-            # FIX: Reconfigure stdout to use UTF-8 on Windows
+            # FIX: Reconfigure stdout/stderr to use UTF-8 on Windows
             if sys.platform == 'win32':
                 try:
-                    # Try to reconfigure stdout to UTF-8
                     sys.stdout.reconfigure(encoding='utf-8')
+                    # FIX #47: Also reconfigure stderr for full UTF-8 support.
+                    sys.stderr.reconfigure(encoding='utf-8') 
                 except AttributeError:
-                    # Python < 3.7 doesn't have reconfigure
-                    # We'll handle this in the formatter
-                    pass
+                    # FIX #47: Log a warning instead of silently passing for older Python versions.
+                    logging.getLogger(__name__).warning("sys.stdout/stderr.reconfigure not available (Python < 3.7). Console encoding issues may occur on Windows.")
             
             console_handler = logging.StreamHandler(sys.stdout)
             console_handler.setLevel(self.log_level)

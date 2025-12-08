@@ -35,7 +35,7 @@ class TrainingEngine:
         
         # 1. Setup Output Directory
         base_dir = self.config.get('outputs', {}).get('base_results_dir', 'results')
-        output_dir = Path(base_dir) / "05_FINAL_MODEL"
+        output_dir = Path(base_dir) / "06_FINAL_MODEL"
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # 2. Prepare Data
@@ -48,6 +48,10 @@ class TrainingEngine:
         X = train_df.drop(columns=drop_cols, errors='ignore')
         y = train_df[[self.config['data']['target_sin'], self.config['data']['target_cos']]]
         
+        # FIX #30: Add validation to ensure there are features left for training.
+        if X.empty or len(X.columns) == 0:
+            raise ModelTrainingError("No features available for training after dropping specified columns.")
+
         feature_names = X.columns.tolist()
         
         # 3. Create Model
@@ -70,23 +74,27 @@ class TrainingEngine:
             self.logger.info(f"Training completed in {duration:.2f} seconds.")
             
             # 5. Save Model & Metadata
+            # FIX #64: Wrap model saving in a try-except block to prevent pipeline failure.
             if self.config['outputs'].get('save_models', True):
-                # Save Model Object
-                model_path = output_dir / "final_model.pkl"
-                joblib.dump(model, model_path)
-                self.logger.info(f"Model saved to {model_path}")
-                
-                # Save Metadata
-                metadata = {
-                    'model': model_name,
-                    'params': params,
-                    'features': feature_names,
-                    'input_shape': list(X.shape),
-                    'training_time_sec': duration,
-                    'timestamp': time.strftime("%Y-%m-%d %H:%M:%S")
-                }
-                with open(output_dir / "training_metadata.json", 'w') as f:
-                    json.dump(metadata, f, indent=2)
+                try:
+                    # Save Model Object
+                    model_path = output_dir / "final_model.pkl"
+                    joblib.dump(model, model_path)
+                    self.logger.info(f"Model saved to {model_path}")
+                    
+                    # Save Metadata
+                    metadata = {
+                        'model': model_name,
+                        'params': params,
+                        'features': feature_names,
+                        'input_shape': list(X.shape),
+                        'training_time_sec': duration,
+                        'timestamp': time.strftime("%Y-%m-%d %H:%M:%S")
+                    }
+                    with open(output_dir / "training_metadata.json", 'w') as f:
+                        json.dump(metadata, f, indent=2)
+                except Exception as e:
+                    self.logger.warning(f"Failed to save model and/or metadata. Error: {e}")
                     
             return model
             

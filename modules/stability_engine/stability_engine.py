@@ -44,7 +44,7 @@ class StabilityEngine:
         
         # 1. Setup Output Directory
         base_dir = self.config.get('outputs', {}).get('base_results_dir', 'results')
-        output_dir = Path(base_dir) / "09_ADVANCED_ANALYTICS" / "stability"
+        output_dir = Path(base_dir) / "11_ADVANCED_ANALYTICS" / "stability"
         output_dir.mkdir(parents=True, exist_ok=True)
         
         results_collection = []
@@ -61,6 +61,11 @@ class StabilityEngine:
             # Create a run-specific config copy
             run_config = copy.deepcopy(self.config)
             run_config['splitting']['seed'] = current_seed
+            
+            # FIX #53: Isolate output directories for this stability run to prevent artifact collision.
+            stability_run_dir = Path(self.config.get('outputs', {}).get('base_results_dir', 'results')) / "stability_runs" / f"run_{run_idx}"
+            run_config['outputs']['base_results_dir'] = str(stability_run_dir)
+
             # Also update internal seeds if used
             if '_internal_seeds' in run_config:
                 run_config['_internal_seeds']['split'] = current_seed
@@ -69,7 +74,8 @@ class StabilityEngine:
                 
             try:
                 # Execute Pipeline for this seed
-                metrics, feats = self._execute_pipeline_run(raw_df, run_config, run_id, run_idx)
+                # FIX #51: Pass a deep copy of raw_df to prevent in-place modification across runs.
+                metrics, feats = self._execute_pipeline_run(raw_df.copy(deep=True), run_config, run_id, run_idx)
                 
                 results_collection.append({
                     'run': run_idx,
@@ -91,8 +97,10 @@ class StabilityEngine:
         results_df.to_excel(output_dir / "stability_results_raw.xlsx", index=False)
         
         # Metric Stability (Mean/Std)
-        stats = results_df.describe().T[['mean', 'std', 'min', 'max']]
-        stats['cv_pct'] = (stats['std'] / stats['mean']) * 100 # Coefficient of Variation
+        # FIX #98: Filter to only metric columns before calculating coefficient of variation.
+        metric_cols = [c for c in results_df.columns if c not in ['run', 'seed']]
+        stats = results_df[metric_cols].describe().T[['mean', 'std', 'min', 'max']]
+        stats['cv_pct'] = (stats['std'] / stats['mean'].replace(0, 1e-9)) * 100 # Avoid division by zero
         stats.to_excel(output_dir / "stability_metrics_summary.xlsx")
         
         # Feature Stability (Jaccard)
@@ -119,8 +127,7 @@ class StabilityEngine:
         # We just need to re-split.
         split_engine = SplitEngine(config, self.logger)
         # Note: SplitEngine writes files to disk. In stability runs, this might overwrite 
-        # main run files if we don't change paths. Ideally, we should redirect output,
-        # but for simplicity we rely on the in-memory dataframes here.
+        # main run files if we don't change paths. This is now fixed by changing base_results_dir.
         train_df, val_df, test_df = split_engine.execute(raw_df, run_id)
         
         # B. HPO / Model Selection
@@ -130,13 +137,12 @@ class StabilityEngine:
         
         if config['hyperparameters']['enabled']:
             hpo_engine = HPOSearchEngine(config, self.logger)
-            # This writes to 04_HYPERPARAMETER_SEARCH. 
-            # Risk: Overwriting main run artifacts. 
-            # Mitigation: In a robust sys, we'd change base_results_dir for stability runs.
-            # For now, we proceed knowing it updates "latest".
-            best_config = hpo_engine.execute(train_df, run_id)
+            # This writes to a stability-run-specific directory now.
+            # FIX #53: The call signature was wrong. Corrected to pass all three dataframes.
+            best_config = hpo_engine.execute(train_df, val_df, test_df, run_id)
         else:
-            model_name = config['models']['native'][0]
+            # Fallback to default if HPO is disabled.
+            model_name = config.get('models', {}).get('native', [{}])[0].get('name', 'ExtraTreesRegressor')
             best_config = {'model': model_name, 'params': {}}
             
         # C. Training
@@ -148,21 +154,22 @@ class StabilityEngine:
         preds_test = pred_engine.predict(model, test_df, "stability_test", run_id)
         
         eval_engine = EvaluationEngine(config, self.logger)
-        # We don't need to save Excel artifacts for every stability run, just get dict
-        # But EvalEngine saves by default.
+        # We don't need to save Excel artifacts for every stability run, just get dict.
+        # But EvalEngine saves by default. Let's call compute_metrics directly.
         metrics = eval_engine.compute_metrics(preds_test)
         
-        # Prefix keys
+        # Prefix keys to avoid clashes and for clarity.
         flat_metrics = {
-            'test_cmae': metrics['cmae'],
-            'test_crmse': metrics['crmse'],
-            'test_accuracy_5': metrics['accuracy_at_5deg']
+            'test_cmae': metrics.get('cmae', float('nan')),
+            'test_crmse': metrics.get('crmse', float('nan')),
+            'test_accuracy_5': metrics.get('accuracy_at_5deg', float('nan'))
         }
         
         # Get features used
         # In current phase (no Iterative FS), all columns in X are features.
-        drop_cols = config['data']['drop_columns'] + [
-            config['data']['target_sin'], config['data']['target_cos'],
+        drop_cols = config['data'].get('drop_columns', []) + [
+            config['data'].get('target_sin'), 
+            config['data'].get('target_cos'),
             'angle_deg', 'angle_bin', 'hs_bin', 'combined_bin'
         ]
         features = [c for c in train_df.columns if c not in drop_cols]

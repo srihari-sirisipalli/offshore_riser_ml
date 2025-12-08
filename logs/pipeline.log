@@ -7079,3 +7079,742 @@ Traceback (most recent call last):
     metrics.update(self._compute_accuracy_bands(abs_error))
     ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TypeError: 'NoneType' object is not iterable
+[2025-12-08 12:23:01,456] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 12:23:01,456] [[36mINFO[0m] [pipeline] [main] PHASE 1: FOUNDATION
+[2025-12-08 12:23:01,456] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 12:23:01,456] [[36mINFO[0m] [pipeline] [main] Run ID: 20251208_122301
+[2025-12-08 12:23:01,457] [[36mINFO[0m] [pipeline] [main] Results Directory: C:\Users\Sri\Projects\AI Driven Sample Space Analysis for Offshore Riser Behavior Modeling\scripts\heading_prediction_from_gyro_data\offshore_riser_ml\results
+[2025-12-08 12:23:01,457] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 12:23:01,457] [[36mINFO[0m] [pipeline] [main] PHASE 2: DATA PREPARATION
+[2025-12-08 12:23:01,457] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 12:23:01,457] [[36mINFO[0m] [pipeline] [execute] Starting Data Manager execution...
+[2025-12-08 12:23:01,458] [[36mINFO[0m] [pipeline] [load_data] Loading data from data/raw/Feature_Extraction_156_best_math_transformed_SignSafe.xlsx
+[2025-12-08 12:23:06,057] [[36mINFO[0m] [pipeline] [load_data] Loaded 3888 rows, 169 columns
+[2025-12-08 12:23:06,057] [[36mINFO[0m] [pipeline] [validate_columns] Required columns validated successfully.
+[2025-12-08 12:23:06,091] [[36mINFO[0m] [pipeline] [validate_circle_constraint] Circle Check: GOOD=3888, WARNING=0, BAD=0
+[2025-12-08 12:23:06,343] [[36mINFO[0m] [pipeline] [compute_derived_columns] Derived columns computed. Unique combined bins: 384
+[2025-12-08 12:23:06,698] [[36mINFO[0m] [pipeline] [generate_reports] Distribution plots generated.
+[2025-12-08 12:23:14,069] [[36mINFO[0m] [pipeline] [execute] Saved validated data to results\01_DATA_VALIDATION\validated_data.xlsx
+[2025-12-08 12:23:14,134] [[36mINFO[0m] [pipeline] [main] [OK] Data validated: 3888 samples
+[2025-12-08 12:23:14,135] [[36mINFO[0m] [pipeline] [execute] Starting Split Engine execution...
+[2025-12-08 12:23:14,137] [[36mINFO[0m] [pipeline] [_determine_stratification_strategy] Bin Analysis (combined_bin): 0 bins have < 2 samples (0.0%)
+[2025-12-08 12:23:14,137] [[36mINFO[0m] [pipeline] [_determine_stratification_strategy] Using 'combined_bin' for stratification.
+[2025-12-08 12:23:24,671] [[36mINFO[0m] [pipeline] [execute] Splits saved: Train=3110, Val=389, Test=389
+[2025-12-08 12:23:24,671] [[36mINFO[0m] [pipeline] [main] [OK] Data split: Train=3110, Val=389, Test=389
+[2025-12-08 12:23:24,671] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 12:23:24,671] [[36mINFO[0m] [pipeline] [main] PHASE 3: HYPERPARAMETER OPTIMIZATION
+[2025-12-08 12:23:24,672] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 12:23:24,672] [[36mINFO[0m] [pipeline] [execute] Starting Hyperparameter Optimization (HPO)...
+[2025-12-08 12:23:24,678] [[36mINFO[0m] [pipeline] [execute] Expanding grid for ExtraTreesRegressor...
+[2025-12-08 12:24:12,354] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3412
+[2025-12-08 12:25:50,196] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3689
+[2025-12-08 12:26:44,400] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3364
+[2025-12-08 12:28:34,095] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3536
+[2025-12-08 12:29:23,930] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3224
+[2025-12-08 12:31:05,285] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3835
+[2025-12-08 12:31:05,369] [[36mINFO[0m] [pipeline] [_finalize_results] Saved comprehensive results to results\03_HYPERPARAMETER_OPTIMIZATION\results\all_configurations.xlsx
+[2025-12-08 12:31:05,373] [[36mINFO[0m] [pipeline] [_finalize_results] Best config: ExtraTreesRegressor | CV CMAE: 1.3224
+[2025-12-08 12:31:05,380] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 12:31:05,381] [[36mINFO[0m] [pipeline] [main] PHASE 4: GLOBAL FAILURE TRACKING (COMPILER)
+[2025-12-08 12:31:05,381] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 12:31:05,381] [[36mINFO[0m] [pipeline] [compile_tracking_data] Starting Global Failure Tracking Compilation (Phase 4)...
+[2025-12-08 12:31:05,383] [[36mINFO[0m] [pipeline] [_process_set_compilation] Compiling 6 snapshots for val set...
+[2025-12-08 12:31:06,147] [[36mINFO[0m] [pipeline] [_process_set_compilation] Saved val Master Matrix: results\04_GLOBAL_FAILURE_TRACKING\Val_Set_Tracking.xlsx
+[2025-12-08 12:31:06,150] [[36mINFO[0m] [pipeline] [_process_set_compilation] Compiling 6 snapshots for test set...
+[2025-12-08 12:31:06,380] [[36mINFO[0m] [pipeline] [_process_set_compilation] Saved test Master Matrix: results\04_GLOBAL_FAILURE_TRACKING\Test_Set_Tracking.xlsx
+[2025-12-08 12:31:06,381] [[36mINFO[0m] [pipeline] [compile_tracking_data] Global Tracking compilation complete. Results in: results\04_GLOBAL_FAILURE_TRACKING
+[2025-12-08 12:31:06,381] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 12:31:06,381] [[36mINFO[0m] [pipeline] [main] PHASE 5: HYPERPARAMETER ANALYSIS
+[2025-12-08 12:31:06,381] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 12:31:06,382] [[36mINFO[0m] [pipeline] [analyze] Starting Hyperparameter Analysis...
+[2025-12-08 12:31:06,425] [[36mINFO[0m] [pipeline] [analyze] Found metrics - CV: 3, Val: 3, Test: 3
+[2025-12-08 12:31:06,469] [[36mINFO[0m] [pipeline] [_generate_optimal_ranges_report_multisheet] Generated multi-sheet optimal ranges: results\04_HYPERPARAMETER_ANALYSIS\optimal_ranges.xlsx
+[2025-12-08 12:31:06,517] [[36mINFO[0m] [pipeline] [_generate_summary_report] Generated summary report
+[2025-12-08 12:31:06,525] [[36mINFO[0m] [pipeline] [analyze] Generating visualizations for ExtraTreesRegressor...
+[2025-12-08 12:31:18,904] [[36mINFO[0m] [pipeline] [analyze] HPO Analysis complete. Artifacts in results\04_HYPERPARAMETER_ANALYSIS
+[2025-12-08 12:31:18,907] [[36mINFO[0m] [pipeline] [main] [OK] HPO analysis complete
+[2025-12-08 12:31:18,908] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 12:31:18,908] [[36mINFO[0m] [pipeline] [main] PHASE 6: MODEL TRAINING
+[2025-12-08 12:31:18,908] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 12:31:18,909] [[36mINFO[0m] [pipeline] [train] Starting Final Model Training...
+[2025-12-08 12:31:18,914] [[36mINFO[0m] [pipeline] [train] Training ExtraTreesRegressor on 3110 samples with 167 features.
+[2025-12-08 12:31:50,641] [[36mINFO[0m] [pipeline] [train] Training completed in 31.73 seconds.
+[2025-12-08 12:31:50,863] [[36mINFO[0m] [pipeline] [train] Model saved to results\05_FINAL_MODEL\final_model.pkl
+[2025-12-08 12:31:50,864] [[36mINFO[0m] [pipeline] [main] [OK] Model trained: ExtraTreesRegressor
+[2025-12-08 12:31:50,865] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 12:31:50,865] [[36mINFO[0m] [pipeline] [main] PHASE 7: PREDICTION
+[2025-12-08 12:31:50,865] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 12:31:50,866] [[36mINFO[0m] [pipeline] [predict] Generating predictions for val set (389 samples)...
+[2025-12-08 12:31:51,097] [[36mINFO[0m] [pipeline] [predict] Predictions saved to results\06_PREDICTIONS\predictions_val.xlsx
+[2025-12-08 12:31:51,097] [[36mINFO[0m] [pipeline] [predict] Generating predictions for test set (389 samples)...
+[2025-12-08 12:31:51,300] [[36mINFO[0m] [pipeline] [predict] Predictions saved to results\06_PREDICTIONS\predictions_test.xlsx
+[2025-12-08 12:31:51,301] [[36mINFO[0m] [pipeline] [main] [OK] Predictions generated
+[2025-12-08 12:31:51,301] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 12:31:51,301] [[36mINFO[0m] [pipeline] [main] PHASE 8: EVALUATION
+[2025-12-08 12:31:51,301] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 12:31:51,302] [[36mINFO[0m] [pipeline] [evaluate] Starting Evaluation for val set...
+[2025-12-08 12:31:51,418] [[36mINFO[0m] [pipeline] [evaluate] Evaluation complete. val CMAE: 0.8596°
+[2025-12-08 12:31:51,418] [[36mINFO[0m] [pipeline] [evaluate] Starting Evaluation for test set...
+[2025-12-08 12:31:51,608] [[36mINFO[0m] [pipeline] [evaluate] Evaluation complete. test CMAE: 1.5245°
+[2025-12-08 12:31:51,610] [[36mINFO[0m] [pipeline] [main] Validation CMAE:         0.8596
+[2025-12-08 12:31:51,612] [[36mINFO[0m] [pipeline] [main] Validation Accuracy@5°: 95.63%
+[2025-12-08 12:31:51,612] [[36mINFO[0m] [pipeline] [main] Test CMAE:               1.5245
+[2025-12-08 12:31:51,614] [[36mINFO[0m] [pipeline] [main] Test Accuracy@5°:       94.60%
+[2025-12-08 12:31:51,615] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 12:31:51,616] [[36mINFO[0m] [pipeline] [main] PHASE 9: DIAGNOSTICS
+[2025-12-08 12:31:51,616] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 12:31:51,617] [[36mINFO[0m] [pipeline] [generate_all] Generating diagnostics for val set...
+[2025-12-08 12:31:55,047] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-08 12:31:55,056] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-08 12:31:55,435] [[36mINFO[0m] [pipeline] [generate_all] Diagnostics generation complete for val.
+[2025-12-08 12:31:55,435] [[36mINFO[0m] [pipeline] [generate_all] Generating diagnostics for test set...
+[2025-12-08 12:31:59,295] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-08 12:31:59,303] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-08 12:31:59,624] [[36mINFO[0m] [pipeline] [generate_all] Diagnostics generation complete for test.
+[2025-12-08 12:31:59,625] [[36mINFO[0m] [pipeline] [main] [OK] Diagnostic plots generated
+[2025-12-08 12:31:59,625] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 12:31:59,625] [[36mINFO[0m] [pipeline] [main] PHASE 10: ERROR ANALYSIS
+[2025-12-08 12:31:59,626] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 12:31:59,626] [[36mINFO[0m] [pipeline] [analyze] Starting Error Analysis for val set...
+[2025-12-08 12:31:59,801] [[36mINFO[0m] [pipeline] [_detect_outliers] Detected 7 statistical outliers using 3sigma.
+[2025-12-08 12:31:59,937] [[36mINFO[0m] [pipeline] [analyze] Error Analysis complete for val.
+[2025-12-08 12:31:59,938] [[36mINFO[0m] [pipeline] [analyze] Starting Error Analysis for test set...
+[2025-12-08 12:32:00,125] [[36mINFO[0m] [pipeline] [_detect_outliers] Detected 6 statistical outliers using 3sigma.
+[2025-12-08 12:32:00,313] [[36mINFO[0m] [pipeline] [analyze] Error Analysis complete for test.
+[2025-12-08 12:32:00,313] [[36mINFO[0m] [pipeline] [main] [OK] Error analysis complete
+[2025-12-08 12:32:00,314] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 12:32:00,314] [[36mINFO[0m] [pipeline] [main] PHASE 11: ADVANCED ANALYTICS
+[2025-12-08 12:32:00,314] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 12:32:00,314] [[36mINFO[0m] [pipeline] [bootstrap] Bootstrapping disabled in config.
+[2025-12-08 12:32:00,315] [[36mINFO[0m] [pipeline] [ensemble] Ensembling disabled in config.
+[2025-12-08 12:32:00,315] [[36mINFO[0m] [pipeline] [run_stability_analysis] Stability Analysis disabled in config.
+[2025-12-08 12:32:00,315] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 12:32:00,316] [[36mINFO[0m] [pipeline] [main] PHASE 12: REPORTING
+[2025-12-08 12:32:00,316] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 12:32:00,365] [[36mINFO[0m] [pipeline] [generate_report] Starting Report Generation Phase...
+[2025-12-08 12:32:00,732] [[36mINFO[0m] [pipeline] [_build_executive_summary] Generated Executive Summary: results\12_REPORTING\01_Executive_Summary_20251208_122301.pdf
+[2025-12-08 12:32:09,975] [[36mINFO[0m] [pipeline] [_build_technical_report] Generated Technical Deep Dive: results\12_REPORTING\02_Technical_Deep_Dive_20251208_122301.pdf
+[2025-12-08 12:32:09,976] [[36mINFO[0m] [pipeline] [main] [OK] PDF Report: results\12_REPORTING\01_Executive_Summary_20251208_122301.pdf
+[2025-12-08 12:32:09,976] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 12:32:09,976] [[36mINFO[0m] [pipeline] [main] PHASE 13: REPRODUCIBILITY PACKAGING
+[2025-12-08 12:32:09,976] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 12:32:09,977] [[36mINFO[0m] [pipeline] [package] Creating Reproducibility Package...
+[2025-12-08 12:32:10,979] [[36mINFO[0m] [pipeline] [package] Reproducibility Package successfully created at: C:\Users\Sri\Projects\AI Driven Sample Space Analysis for Offshore Riser Behavior Modeling\scripts\heading_prediction_from_gyro_data\offshore_riser_ml\results\11_REPRODUCIBILITY_PACKAGE
+[2025-12-08 12:32:10,980] [[36mINFO[0m] [pipeline] [main] [OK] Reproducibility Package: results\11_REPRODUCIBILITY_PACKAGE
+[2025-12-08 12:32:10,980] [[36mINFO[0m] [pipeline] [main] 
+================================================================================
+[2025-12-08 12:32:10,980] [[36mINFO[0m] [pipeline] [main]     PIPELINE COMPLETED SUCCESSFULLY
+[2025-12-08 12:32:10,980] [[36mINFO[0m] [pipeline] [main] ================================================================================
+[2025-12-08 12:32:10,980] [[36mINFO[0m] [pipeline] [main] 
+>> Final Report:      results\12_REPORTING\01_Executive_Summary_20251208_122301.pdf
+[2025-12-08 12:32:10,981] [[36mINFO[0m] [pipeline] [main] >> Package:           results\11_REPRODUCIBILITY_PACKAGE
+[2025-12-08 12:32:10,981] [[36mINFO[0m] [pipeline] [main] >> Results Directory: C:\Users\Sri\Projects\AI Driven Sample Space Analysis for Offshore Riser Behavior Modeling\scripts\heading_prediction_from_gyro_data\offshore_riser_ml\results
+[2025-12-08 12:32:10,981] [[36mINFO[0m] [pipeline] [main] 
+================================================================================
+
+[2025-12-08 14:19:02,759] [[33mWARNING[0m] [pipeline] [_check_library_versions] Version mismatch for numpy. Expected 1.24.0, but found 2.2.6. Please ensure your environment matches requirements.txt by running 'pip install -r requirements.txt'.
+[2025-12-08 14:19:02,760] [[33mWARNING[0m] [pipeline] [_check_library_versions] Version mismatch for pandas. Expected 2.0.0, but found 2.3.3. Please ensure your environment matches requirements.txt by running 'pip install -r requirements.txt'.
+[2025-12-08 14:19:02,760] [[33mWARNING[0m] [pipeline] [_check_library_versions] Version mismatch for scikit-learn. Expected 1.3.0, but found 1.7.2. Please ensure your environment matches requirements.txt by running 'pip install -r requirements.txt'.
+[2025-12-08 14:19:02,763] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:19:02,764] [[36mINFO[0m] [pipeline] [main] PHASE 1: FOUNDATION
+[2025-12-08 14:19:02,764] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:19:02,764] [[36mINFO[0m] [pipeline] [main] Run ID: 20251208_141902
+[2025-12-08 14:19:02,764] [[36mINFO[0m] [pipeline] [main] Results Directory: C:\Users\Sri\Projects\AI Driven Sample Space Analysis for Offshore Riser Behavior Modeling\scripts\heading_prediction_from_gyro_data\offshore_riser_ml\results
+[2025-12-08 14:19:02,764] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 14:19:02,764] [[36mINFO[0m] [pipeline] [main] PHASE 2: DATA PREPARATION
+[2025-12-08 14:19:02,765] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:19:02,765] [[36mINFO[0m] [pipeline] [execute] Starting Data Manager execution...
+[2025-12-08 14:19:02,766] [[36mINFO[0m] [pipeline] [load_data] Loading data from C:\Users\Sri\Projects\AI Driven Sample Space Analysis for Offshore Riser Behavior Modeling\scripts\heading_prediction_from_gyro_data\offshore_riser_ml\data\raw\Feature_Extraction_156_best_math_transformed_SignSafe.xlsx
+[2025-12-08 14:19:08,346] [[36mINFO[0m] [pipeline] [load_data] Loaded 3888 rows, 169 columns
+[2025-12-08 14:19:08,346] [[36mINFO[0m] [pipeline] [validate_columns] Required columns validated successfully.
+[2025-12-08 14:19:08,385] [[36mINFO[0m] [pipeline] [validate_circle_constraint] Circle Check: GOOD=3888, WARNING=0, BAD=0
+[2025-12-08 14:19:08,675] [[36mINFO[0m] [pipeline] [compute_derived_columns] Derived columns computed. Unique combined bins: 384
+[2025-12-08 14:19:09,039] [[36mINFO[0m] [pipeline] [generate_reports] Distribution plots generated.
+[2025-12-08 14:19:17,836] [[36mINFO[0m] [pipeline] [execute] Saved validated data to results\01_DATA_VALIDATION\validated_data.xlsx
+[2025-12-08 14:19:17,888] [[36mINFO[0m] [pipeline] [main] [OK] Data validated: 3888 samples
+[2025-12-08 14:19:17,888] [[36mINFO[0m] [pipeline] [execute] Starting Split Engine execution...
+[2025-12-08 14:19:17,889] [[36mINFO[0m] [pipeline] [_determine_stratification_strategy] Bin Analysis (combined_bin): 0 bins have < 3 samples (0.0%)
+[2025-12-08 14:19:17,889] [[36mINFO[0m] [pipeline] [_determine_stratification_strategy] Using 'combined_bin' for stratification.
+[2025-12-08 14:19:27,731] [[36mINFO[0m] [pipeline] [execute] Splits saved: Train=3110, Val=389, Test=389
+[2025-12-08 14:19:27,732] [[36mINFO[0m] [pipeline] [main] [OK] Data split: Train=3110, Val=389, Test=389
+[2025-12-08 14:19:27,732] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 14:19:27,732] [[36mINFO[0m] [pipeline] [main] PHASE 3: HYPERPARAMETER OPTIMIZATION
+[2025-12-08 14:19:27,732] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:19:27,733] [[36mINFO[0m] [pipeline] [execute] Starting Hyperparameter Optimization (HPO)...
+[2025-12-08 14:19:27,739] [[36mINFO[0m] [pipeline] [execute] Expanding grid for ExtraTreesRegressor...
+[2025-12-08 14:20:13,306] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3792
+[2025-12-08 14:21:40,773] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3680
+[2025-12-08 14:22:25,677] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3516
+[2025-12-08 14:23:52,464] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3778
+[2025-12-08 14:24:36,429] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3834
+[2025-12-08 14:26:03,240] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3482
+[2025-12-08 14:26:03,300] [[36mINFO[0m] [pipeline] [_finalize_results] Saved comprehensive results to results\03_HYPERPARAMETER_OPTIMIZATION\results\all_configurations.xlsx
+[2025-12-08 14:26:03,302] [[36mINFO[0m] [pipeline] [_finalize_results] Best config: ExtraTreesRegressor | CV CMAE: 1.3482
+[2025-12-08 14:26:03,310] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 14:26:03,310] [[36mINFO[0m] [pipeline] [main] PHASE 4: GLOBAL FAILURE TRACKING (COMPILER)
+[2025-12-08 14:26:03,311] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:26:03,311] [[36mINFO[0m] [pipeline] [compile_tracking_data] Starting Global Failure Tracking Compilation (Phase 4)...
+[2025-12-08 14:26:03,314] [[36mINFO[0m] [pipeline] [_process_set_compilation] Compiling 6 snapshots for val set...
+[2025-12-08 14:26:03,314] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 1/6 (17%)
+[2025-12-08 14:26:03,332] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 2/6 (33%)
+[2025-12-08 14:26:03,350] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 3/6 (50%)
+[2025-12-08 14:26:03,366] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 4/6 (67%)
+[2025-12-08 14:26:03,383] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 5/6 (83%)
+[2025-12-08 14:26:03,397] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 6/6 (100%)
+[2025-12-08 14:26:03,854] [[36mINFO[0m] [pipeline] [_process_set_compilation] Saved val Master Matrix: results\04_GLOBAL_FAILURE_TRACKING\Val_Set_Tracking.xlsx
+[2025-12-08 14:26:03,857] [[36mINFO[0m] [pipeline] [_process_set_compilation] Compiling 6 snapshots for test set...
+[2025-12-08 14:26:03,857] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 1/6 (17%)
+[2025-12-08 14:26:03,873] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 2/6 (33%)
+[2025-12-08 14:26:03,888] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 3/6 (50%)
+[2025-12-08 14:26:03,903] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 4/6 (67%)
+[2025-12-08 14:26:03,919] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 5/6 (83%)
+[2025-12-08 14:26:03,933] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 6/6 (100%)
+[2025-12-08 14:26:04,042] [[36mINFO[0m] [pipeline] [_process_set_compilation] Saved test Master Matrix: results\04_GLOBAL_FAILURE_TRACKING\Test_Set_Tracking.xlsx
+[2025-12-08 14:26:04,042] [[36mINFO[0m] [pipeline] [compile_tracking_data] Global Tracking compilation complete. Results in: results\04_GLOBAL_FAILURE_TRACKING
+[2025-12-08 14:26:04,043] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 14:26:04,043] [[36mINFO[0m] [pipeline] [main] PHASE 5: HYPERPARAMETER ANALYSIS
+[2025-12-08 14:26:04,043] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:26:04,043] [[36mINFO[0m] [pipeline] [analyze] Starting Hyperparameter Analysis...
+[2025-12-08 14:26:04,076] [[36mINFO[0m] [pipeline] [analyze] Found metrics - CV: 3, Val: 3, Test: 3
+[2025-12-08 14:26:04,108] [[36mINFO[0m] [pipeline] [_generate_optimal_ranges_report_multisheet] Generated multi-sheet optimal ranges: results\04_HYPERPARAMETER_ANALYSIS\optimal_ranges.xlsx
+[2025-12-08 14:26:04,136] [[36mINFO[0m] [pipeline] [_generate_summary_report] Generated summary report
+[2025-12-08 14:26:04,137] [[36mINFO[0m] [pipeline] [analyze] Generating visualizations for ExtraTreesRegressor...
+[2025-12-08 14:26:13,481] [[36mINFO[0m] [pipeline] [analyze] HPO Analysis complete. Artifacts in results\04_HYPERPARAMETER_ANALYSIS
+[2025-12-08 14:26:13,481] [[36mINFO[0m] [pipeline] [main] [OK] HPO analysis complete
+[2025-12-08 14:26:13,481] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 14:26:13,482] [[36mINFO[0m] [pipeline] [main] PHASE 6: MODEL TRAINING
+[2025-12-08 14:26:13,482] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:26:13,482] [[36mINFO[0m] [pipeline] [train] Starting Final Model Training...
+[2025-12-08 14:26:13,484] [[36mINFO[0m] [pipeline] [train] Training ExtraTreesRegressor on 3110 samples with 167 features.
+[2025-12-08 14:26:57,776] [[36mINFO[0m] [pipeline] [train] Training completed in 44.29 seconds.
+[2025-12-08 14:26:58,134] [[36mINFO[0m] [pipeline] [train] Model saved to results\05_FINAL_MODEL\final_model.pkl
+[2025-12-08 14:26:58,136] [[36mINFO[0m] [pipeline] [main] [OK] Model trained: ExtraTreesRegressor
+[2025-12-08 14:26:58,136] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 14:26:58,136] [[36mINFO[0m] [pipeline] [main] PHASE 7: PREDICTION
+[2025-12-08 14:26:58,137] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:26:58,137] [[36mINFO[0m] [pipeline] [predict] Generating predictions for val set (389 samples)...
+[2025-12-08 14:26:58,334] [[36mINFO[0m] [pipeline] [predict] Predictions saved to results\06_PREDICTIONS\predictions_val.xlsx
+[2025-12-08 14:26:58,334] [[36mINFO[0m] [pipeline] [predict] Generating predictions for test set (389 samples)...
+[2025-12-08 14:26:58,554] [[36mINFO[0m] [pipeline] [predict] Predictions saved to results\06_PREDICTIONS\predictions_test.xlsx
+[2025-12-08 14:26:58,554] [[36mINFO[0m] [pipeline] [main] [OK] Predictions generated
+[2025-12-08 14:26:58,555] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 14:26:58,555] [[36mINFO[0m] [pipeline] [main] PHASE 8: EVALUATION
+[2025-12-08 14:26:58,555] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:26:58,555] [[36mINFO[0m] [pipeline] [evaluate] Starting Evaluation for val set...
+[2025-12-08 14:26:58,631] [[36mINFO[0m] [pipeline] [evaluate] Evaluation complete. val CMAE: 0.8323°
+[2025-12-08 14:26:58,631] [[36mINFO[0m] [pipeline] [evaluate] Starting Evaluation for test set...
+[2025-12-08 14:26:58,710] [[36mINFO[0m] [pipeline] [evaluate] Evaluation complete. test CMAE: 1.5673°
+[2025-12-08 14:26:58,711] [[36mINFO[0m] [pipeline] [main] Validation CMAE:         0.8323
+[2025-12-08 14:26:58,711] [[36mINFO[0m] [pipeline] [main] Validation Accuracy@5°: 95.12%
+[2025-12-08 14:26:58,711] [[36mINFO[0m] [pipeline] [main] Test CMAE:               1.5673
+[2025-12-08 14:26:58,711] [[36mINFO[0m] [pipeline] [main] Test Accuracy@5°:       94.86%
+[2025-12-08 14:26:58,711] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 14:26:58,712] [[36mINFO[0m] [pipeline] [main] PHASE 9: DIAGNOSTICS
+[2025-12-08 14:26:58,712] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:26:58,712] [[36mINFO[0m] [pipeline] [generate_all] Generating diagnostics for val set...
+[2025-12-08 14:27:01,262] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-08 14:27:01,269] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-08 14:27:01,521] [[36mINFO[0m] [pipeline] [generate_all] Diagnostics generation complete for val.
+[2025-12-08 14:27:01,523] [[36mINFO[0m] [pipeline] [generate_all] Generating diagnostics for test set...
+[2025-12-08 14:27:04,174] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-08 14:27:04,180] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-08 14:27:04,483] [[36mINFO[0m] [pipeline] [generate_all] Diagnostics generation complete for test.
+[2025-12-08 14:27:04,484] [[36mINFO[0m] [pipeline] [main] [OK] Diagnostic plots generated
+[2025-12-08 14:27:04,484] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 14:27:04,485] [[36mINFO[0m] [pipeline] [main] PHASE 10: ERROR ANALYSIS
+[2025-12-08 14:27:04,485] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:27:04,485] [[36mINFO[0m] [pipeline] [analyze] Starting Error Analysis for val set...
+[2025-12-08 14:27:04,611] [[36mINFO[0m] [pipeline] [_detect_outliers] Detected 6 statistical outliers using 3sigma.
+[2025-12-08 14:27:04,690] [[36mINFO[0m] [pipeline] [analyze] Error Analysis complete for val.
+[2025-12-08 14:27:04,690] [[36mINFO[0m] [pipeline] [analyze] Starting Error Analysis for test set...
+[2025-12-08 14:27:04,832] [[36mINFO[0m] [pipeline] [_detect_outliers] Detected 6 statistical outliers using 3sigma.
+[2025-12-08 14:27:04,945] [[36mINFO[0m] [pipeline] [analyze] Error Analysis complete for test.
+[2025-12-08 14:27:04,946] [[36mINFO[0m] [pipeline] [main] [OK] Error analysis complete
+[2025-12-08 14:27:04,946] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 14:27:04,947] [[36mINFO[0m] [pipeline] [main] PHASE 11: ADVANCED ANALYTICS
+[2025-12-08 14:27:04,947] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:27:04,947] [[36mINFO[0m] [pipeline] [bootstrap] Bootstrapping disabled in config.
+[2025-12-08 14:27:04,947] [[36mINFO[0m] [pipeline] [ensemble] Ensembling disabled in config.
+[2025-12-08 14:27:04,948] [[36mINFO[0m] [pipeline] [run_stability_analysis] Stability Analysis disabled in config.
+[2025-12-08 14:27:04,948] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 14:27:04,948] [[36mINFO[0m] [pipeline] [main] PHASE 12: REPORTING
+[2025-12-08 14:27:04,949] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:27:04,991] [[36mINFO[0m] [pipeline] [generate_report] Starting Report Generation Phase...
+[2025-12-08 14:27:05,382] [[36mINFO[0m] [pipeline] [_build_executive_summary] Generated Executive Summary: results\12_REPORTING\01_Executive_Summary_20251208_141902.pdf
+[2025-12-08 14:27:13,207] [[36mINFO[0m] [pipeline] [_build_technical_report] Generated Technical Deep Dive: results\12_REPORTING\02_Technical_Deep_Dive_20251208_141902.pdf
+[2025-12-08 14:27:13,208] [[36mINFO[0m] [pipeline] [main] [OK] PDF Report: results\12_REPORTING\01_Executive_Summary_20251208_141902.pdf
+[2025-12-08 14:27:13,208] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 14:27:13,208] [[36mINFO[0m] [pipeline] [main] PHASE 13: REPRODUCIBILITY PACKAGING
+[2025-12-08 14:27:13,208] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:27:13,209] [[36mINFO[0m] [pipeline] [package] Creating Reproducibility Package...
+[2025-12-08 14:27:16,117] [[36mINFO[0m] [pipeline] [package] Reproducibility Package successfully created at: C:\Users\Sri\Projects\AI Driven Sample Space Analysis for Offshore Riser Behavior Modeling\scripts\heading_prediction_from_gyro_data\offshore_riser_ml\results\11_REPRODUCIBILITY_PACKAGE
+[2025-12-08 14:27:16,117] [[36mINFO[0m] [pipeline] [main] [OK] Reproducibility Package: results\11_REPRODUCIBILITY_PACKAGE
+[2025-12-08 14:27:16,117] [[36mINFO[0m] [pipeline] [main] 
+================================================================================
+[2025-12-08 14:27:16,117] [[36mINFO[0m] [pipeline] [main]     PIPELINE COMPLETED SUCCESSFULLY
+[2025-12-08 14:27:16,118] [[36mINFO[0m] [pipeline] [main] ================================================================================
+[2025-12-08 14:27:16,118] [[36mINFO[0m] [pipeline] [main] 
+>> Final Report:      results\12_REPORTING\01_Executive_Summary_20251208_141902.pdf
+[2025-12-08 14:27:16,118] [[36mINFO[0m] [pipeline] [main] >> Package:           results\11_REPRODUCIBILITY_PACKAGE
+[2025-12-08 14:27:16,118] [[36mINFO[0m] [pipeline] [main] >> Results Directory: C:\Users\Sri\Projects\AI Driven Sample Space Analysis for Offshore Riser Behavior Modeling\scripts\heading_prediction_from_gyro_data\offshore_riser_ml\results
+[2025-12-08 14:27:16,118] [[36mINFO[0m] [pipeline] [main] 
+================================================================================
+
+[2025-12-08 14:52:05,266] [[33mWARNING[0m] [pipeline] [_check_library_versions] Version mismatch for numpy. Expected 1.24.0, but found 2.2.6. Please ensure your environment matches requirements.txt by running 'pip install -r requirements.txt'.
+[2025-12-08 14:52:05,266] [[33mWARNING[0m] [pipeline] [_check_library_versions] Version mismatch for pandas. Expected 2.0.0, but found 2.3.3. Please ensure your environment matches requirements.txt by running 'pip install -r requirements.txt'.
+[2025-12-08 14:52:05,267] [[33mWARNING[0m] [pipeline] [_check_library_versions] Version mismatch for scikit-learn. Expected 1.3.0, but found 1.7.2. Please ensure your environment matches requirements.txt by running 'pip install -r requirements.txt'.
+[2025-12-08 14:52:05,278] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:52:05,279] [[36mINFO[0m] [pipeline] [main] PHASE 1: FOUNDATION
+[2025-12-08 14:52:05,279] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:52:05,279] [[36mINFO[0m] [pipeline] [main] Run ID: 20251208_145205
+[2025-12-08 14:52:05,280] [[36mINFO[0m] [pipeline] [main] Results Directory: C:\Users\Sri\Projects\AI Driven Sample Space Analysis for Offshore Riser Behavior Modeling\scripts\heading_prediction_from_gyro_data\offshore_riser_ml\results
+[2025-12-08 14:52:05,280] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 14:52:05,280] [[36mINFO[0m] [pipeline] [main] PHASE 2: DATA PREPARATION
+[2025-12-08 14:52:05,281] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:52:05,281] [[36mINFO[0m] [pipeline] [execute] Starting Data Manager execution...
+[2025-12-08 14:52:05,282] [[36mINFO[0m] [pipeline] [load_data] Loading data from C:\Users\Sri\Projects\AI Driven Sample Space Analysis for Offshore Riser Behavior Modeling\scripts\heading_prediction_from_gyro_data\offshore_riser_ml\data\raw\Feature_Extraction_156_best_math_transformed_SignSafe.xlsx
+[2025-12-08 14:52:09,748] [[36mINFO[0m] [pipeline] [load_data] Loaded 3888 rows, 169 columns
+[2025-12-08 14:52:09,748] [[36mINFO[0m] [pipeline] [validate_columns] Required columns validated successfully.
+[2025-12-08 14:52:09,787] [[36mINFO[0m] [pipeline] [validate_circle_constraint] Circle Check: GOOD=3888, WARNING=0, BAD=0
+[2025-12-08 14:52:10,035] [[36mINFO[0m] [pipeline] [compute_derived_columns] Derived columns computed. Unique combined bins: 384
+[2025-12-08 14:52:10,320] [[36mINFO[0m] [pipeline] [generate_reports] Distribution plots generated.
+[2025-12-08 14:52:18,737] [[36mINFO[0m] [pipeline] [execute] Saved validated data to results\01_DATA_VALIDATION\validated_data.xlsx
+[2025-12-08 14:52:18,780] [[36mINFO[0m] [pipeline] [main] [OK] Data validated: 3888 samples
+[2025-12-08 14:52:18,780] [[36mINFO[0m] [pipeline] [execute] Starting Split Engine execution...
+[2025-12-08 14:52:18,782] [[36mINFO[0m] [pipeline] [_determine_stratification_strategy] Bin Analysis (combined_bin): 0 bins have < 3 samples (0.0%)
+[2025-12-08 14:52:18,782] [[36mINFO[0m] [pipeline] [_determine_stratification_strategy] Using 'combined_bin' for stratification.
+[2025-12-08 14:52:27,449] [[36mINFO[0m] [pipeline] [execute] Splits saved: Train=3110, Val=389, Test=389
+[2025-12-08 14:52:27,450] [[36mINFO[0m] [pipeline] [main] [OK] Data split: Train=3110, Val=389, Test=389
+[2025-12-08 14:52:27,450] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 14:52:27,450] [[36mINFO[0m] [pipeline] [main] PHASE 3: HYPERPARAMETER OPTIMIZATION
+[2025-12-08 14:52:27,451] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:52:27,451] [[36mINFO[0m] [pipeline] [execute] Starting Hyperparameter Optimization (HPO)...
+[2025-12-08 14:52:27,455] [[36mINFO[0m] [pipeline] [execute] Expanding grid for ExtraTreesRegressor...
+[2025-12-08 14:53:06,822] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3890
+[2025-12-08 14:54:23,804] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3836
+[2025-12-08 14:54:51,400] [[33mWARNING[0m] [pipeline] [_check_library_versions] Version mismatch for numpy. Expected 1.24.0, but found 2.2.6. Please ensure your environment matches requirements.txt by running 'pip install -r requirements.txt'.
+[2025-12-08 14:54:51,401] [[33mWARNING[0m] [pipeline] [_check_library_versions] Version mismatch for pandas. Expected 2.0.0, but found 2.3.3. Please ensure your environment matches requirements.txt by running 'pip install -r requirements.txt'.
+[2025-12-08 14:54:51,401] [[33mWARNING[0m] [pipeline] [_check_library_versions] Version mismatch for scikit-learn. Expected 1.3.0, but found 1.7.2. Please ensure your environment matches requirements.txt by running 'pip install -r requirements.txt'.
+[2025-12-08 14:54:51,404] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:54:51,405] [[36mINFO[0m] [pipeline] [main] PHASE 1: FOUNDATION
+[2025-12-08 14:54:51,405] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:54:51,405] [[36mINFO[0m] [pipeline] [main] Run ID: 20251208_145451
+[2025-12-08 14:54:51,405] [[36mINFO[0m] [pipeline] [main] Results Directory: C:\Users\Sri\Projects\AI Driven Sample Space Analysis for Offshore Riser Behavior Modeling\scripts\heading_prediction_from_gyro_data\offshore_riser_ml\results
+[2025-12-08 14:54:51,405] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 14:54:51,406] [[36mINFO[0m] [pipeline] [main] PHASE 2: DATA PREPARATION
+[2025-12-08 14:54:51,406] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:54:51,406] [[36mINFO[0m] [pipeline] [execute] Starting Data Manager execution...
+[2025-12-08 14:54:51,407] [[36mINFO[0m] [pipeline] [load_data] Loading data from C:\Users\Sri\Projects\AI Driven Sample Space Analysis for Offshore Riser Behavior Modeling\scripts\heading_prediction_from_gyro_data\offshore_riser_ml\data\raw\Feature_Extraction_156_best_math_transformed_SignSafe.xlsx
+[2025-12-08 14:54:57,224] [[36mINFO[0m] [pipeline] [load_data] Loaded 3888 rows, 169 columns
+[2025-12-08 14:54:57,224] [[36mINFO[0m] [pipeline] [validate_columns] Required columns validated successfully.
+[2025-12-08 14:54:57,262] [[36mINFO[0m] [pipeline] [validate_circle_constraint] Circle Check: GOOD=3888, WARNING=0, BAD=0
+[2025-12-08 14:54:57,505] [[36mINFO[0m] [pipeline] [compute_derived_columns] Derived columns computed. Unique combined bins: 384
+[2025-12-08 14:55:07,171] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3616
+[2025-12-08 14:56:10,436] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:56:10,436] [[36mINFO[0m] [pipeline] [main] PHASE 1: FOUNDATION
+[2025-12-08 14:56:10,436] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:56:10,436] [[36mINFO[0m] [pipeline] [main] Run ID: 20251208_145610
+[2025-12-08 14:56:10,437] [[36mINFO[0m] [pipeline] [main] Results Directory: C:\Users\Sri\Projects\AI Driven Sample Space Analysis for Offshore Riser Behavior Modeling\scripts\heading_prediction_from_gyro_data\offshore_riser_ml\results
+[2025-12-08 14:56:10,437] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 14:56:10,437] [[36mINFO[0m] [pipeline] [main] PHASE 2: DATA PREPARATION
+[2025-12-08 14:56:10,437] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:56:10,437] [[36mINFO[0m] [pipeline] [execute] Starting Data Manager execution...
+[2025-12-08 14:56:10,438] [[36mINFO[0m] [pipeline] [load_data] Loading data from C:\Users\Sri\Projects\AI Driven Sample Space Analysis for Offshore Riser Behavior Modeling\scripts\heading_prediction_from_gyro_data\offshore_riser_ml\data\raw\Feature_Extraction_156_best_math_transformed_SignSafe.xlsx
+[2025-12-08 14:56:16,719] [[36mINFO[0m] [pipeline] [load_data] Loaded 3888 rows, 169 columns
+[2025-12-08 14:56:16,719] [[36mINFO[0m] [pipeline] [validate_columns] Required columns validated successfully.
+[2025-12-08 14:56:16,763] [[36mINFO[0m] [pipeline] [validate_circle_constraint] Circle Check: GOOD=3888, WARNING=0, BAD=0
+[2025-12-08 14:56:17,081] [[36mINFO[0m] [pipeline] [compute_derived_columns] Derived columns computed. Unique combined bins: 384
+[2025-12-08 14:56:17,447] [[36mINFO[0m] [pipeline] [generate_reports] Distribution plots generated.
+[2025-12-08 14:56:26,415] [[33mWARNING[0m] [pipeline] [_save_snapshot] Failed to save snapshot for trial 4 (val): Cannot save file into a non-existent directory: 'results\03_HPO_SEARCH\tracking_snapshots'
+[2025-12-08 14:56:26,441] [[36mINFO[0m] [pipeline] [execute] Saved validated data to results\01_DATA_VALIDATION\validated_data.xlsx
+[2025-12-08 14:56:26,486] [[36mINFO[0m] [pipeline] [main] [OK] Data validated: 3888 samples
+[2025-12-08 14:56:26,487] [[36mINFO[0m] [pipeline] [execute] Starting Split Engine execution...
+[2025-12-08 14:56:26,488] [[36mINFO[0m] [pipeline] [_determine_stratification_strategy] Bin Analysis (combined_bin): 0 bins have < 3 samples (0.0%)
+[2025-12-08 14:56:26,488] [[36mINFO[0m] [pipeline] [_determine_stratification_strategy] Using 'combined_bin' for stratification.
+[2025-12-08 14:56:26,523] [[33mWARNING[0m] [pipeline] [_save_snapshot] Failed to save snapshot for trial 4 (test): Cannot save file into a non-existent directory: 'results\03_HPO_SEARCH\tracking_snapshots'
+[2025-12-08 14:56:26,523] [[31m[1mCRITICAL[0m] [pipeline] [main] Unexpected: [Errno 2] No such file or directory: 'results\\03_HYPERPARAMETER_OPTIMIZATION\\progress\\hpo_progress.jsonl'
+Traceback (most recent call last):
+  File "C:\Users\Sri\Projects\AI Driven Sample Space Analysis for Offshore Riser Behavior Modeling\scripts\heading_prediction_from_gyro_data\offshore_riser_ml\main.py", line 128, in main
+    best_config = hpo_engine.execute(train_df, val_df, test_df, run_id)
+  File "C:\Users\Sri\Projects\AI Driven Sample Space Analysis for Offshore Riser Behavior Modeling\scripts\heading_prediction_from_gyro_data\offshore_riser_ml\modules\hpo_search_engine\hpo_search_engine.py", line 155, in execute
+    self._save_progress(result_entry)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\Sri\Projects\AI Driven Sample Space Analysis for Offshore Riser Behavior Modeling\scripts\heading_prediction_from_gyro_data\offshore_riser_ml\modules\hpo_search_engine\hpo_search_engine.py", line 426, in _save_progress
+    with open(self.progress_file, 'a') as f:
+         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'results\\03_HYPERPARAMETER_OPTIMIZATION\\progress\\hpo_progress.jsonl'
+[2025-12-08 14:56:35,530] [[36mINFO[0m] [pipeline] [execute] Splits saved: Train=3110, Val=389, Test=389
+[2025-12-08 14:56:35,531] [[36mINFO[0m] [pipeline] [main] [OK] Data split: Train=3110, Val=389, Test=389
+[2025-12-08 14:56:35,531] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 14:56:35,531] [[36mINFO[0m] [pipeline] [main] PHASE 3: HYPERPARAMETER OPTIMIZATION
+[2025-12-08 14:56:35,531] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:56:35,531] [[36mINFO[0m] [pipeline] [execute] Starting Hyperparameter Optimization (HPO)...
+[2025-12-08 14:56:35,537] [[36mINFO[0m] [pipeline] [execute] Expanding grid for ExtraTreesRegressor...
+[2025-12-08 14:57:02,218] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:57:02,219] [[36mINFO[0m] [pipeline] [main] PHASE 1: FOUNDATION
+[2025-12-08 14:57:02,219] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:57:02,220] [[36mINFO[0m] [pipeline] [main] Run ID: 20251208_145702
+[2025-12-08 14:57:02,220] [[36mINFO[0m] [pipeline] [main] Results Directory: C:\Users\Sri\Projects\AI Driven Sample Space Analysis for Offshore Riser Behavior Modeling\scripts\heading_prediction_from_gyro_data\offshore_riser_ml\results
+[2025-12-08 14:57:02,220] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 14:57:02,220] [[36mINFO[0m] [pipeline] [main] PHASE 2: DATA PREPARATION
+[2025-12-08 14:57:02,221] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:57:02,221] [[36mINFO[0m] [pipeline] [execute] Starting Data Manager execution...
+[2025-12-08 14:57:02,222] [[36mINFO[0m] [pipeline] [load_data] Loading data from C:\Users\Sri\Projects\AI Driven Sample Space Analysis for Offshore Riser Behavior Modeling\scripts\heading_prediction_from_gyro_data\offshore_riser_ml\data\raw\Feature_Extraction_156_best_math_transformed_SignSafe.xlsx
+[2025-12-08 14:57:07,653] [[36mINFO[0m] [pipeline] [load_data] Loaded 3888 rows, 169 columns
+[2025-12-08 14:57:07,653] [[36mINFO[0m] [pipeline] [validate_columns] Required columns validated successfully.
+[2025-12-08 14:57:07,696] [[36mINFO[0m] [pipeline] [validate_circle_constraint] Circle Check: GOOD=3888, WARNING=0, BAD=0
+[2025-12-08 14:57:07,969] [[36mINFO[0m] [pipeline] [compute_derived_columns] Derived columns computed. Unique combined bins: 384
+[2025-12-08 14:57:08,314] [[36mINFO[0m] [pipeline] [generate_reports] Distribution plots generated.
+[2025-12-08 14:57:13,285] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3781
+[2025-12-08 14:57:17,453] [[36mINFO[0m] [pipeline] [execute] Saved validated data to results\01_DATA_VALIDATION\validated_data.xlsx
+[2025-12-08 14:57:17,500] [[36mINFO[0m] [pipeline] [main] [OK] Data validated: 3888 samples
+[2025-12-08 14:57:17,500] [[36mINFO[0m] [pipeline] [execute] Starting Split Engine execution...
+[2025-12-08 14:57:17,502] [[36mINFO[0m] [pipeline] [_determine_stratification_strategy] Bin Analysis (combined_bin): 0 bins have < 3 samples (0.0%)
+[2025-12-08 14:57:17,502] [[36mINFO[0m] [pipeline] [_determine_stratification_strategy] Using 'combined_bin' for stratification.
+[2025-12-08 14:57:28,863] [[36mINFO[0m] [pipeline] [execute] Splits saved: Train=3110, Val=389, Test=389
+[2025-12-08 14:57:28,864] [[36mINFO[0m] [pipeline] [main] [OK] Data split: Train=3110, Val=389, Test=389
+[2025-12-08 14:57:28,864] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 14:57:28,864] [[36mINFO[0m] [pipeline] [main] PHASE 3: HYPERPARAMETER OPTIMIZATION
+[2025-12-08 14:57:28,864] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 14:57:28,865] [[36mINFO[0m] [pipeline] [execute] Starting Hyperparameter Optimization (HPO)...
+[2025-12-08 14:57:28,879] [[36mINFO[0m] [pipeline] [_load_progress] Resumed HPO: 1 configs already completed.
+[2025-12-08 14:57:28,883] [[36mINFO[0m] [pipeline] [execute] Expanding grid for ExtraTreesRegressor...
+[2025-12-08 14:58:51,404] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3669
+[2025-12-08 14:58:58,583] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3574
+[2025-12-08 14:59:43,695] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3814
+[2025-12-08 14:59:50,884] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3454
+[2025-12-08 15:01:23,195] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3806
+[2025-12-08 15:01:31,646] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3858
+[2025-12-08 15:02:13,679] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3585
+[2025-12-08 15:02:21,194] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3826
+[2025-12-08 15:03:55,228] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3976
+[2025-12-08 15:03:55,652] [[36mINFO[0m] [pipeline] [_finalize_results] Saved comprehensive results to results\03_HYPERPARAMETER_OPTIMIZATION\results\all_configurations.xlsx
+[2025-12-08 15:03:55,655] [[36mINFO[0m] [pipeline] [_finalize_results] Best config: ExtraTreesRegressor | CV CMAE: 1.3454
+[2025-12-08 15:03:55,664] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 15:03:55,665] [[36mINFO[0m] [pipeline] [main] PHASE 4: GLOBAL FAILURE TRACKING (COMPILER)
+[2025-12-08 15:03:55,665] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 15:03:55,665] [[36mINFO[0m] [pipeline] [compile_tracking_data] Starting Global Failure Tracking Compilation (Phase 4)...
+[2025-12-08 15:03:55,669] [[36mINFO[0m] [pipeline] [_process_set_compilation] Compiling 6 snapshots for val set...
+[2025-12-08 15:03:55,669] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 1/6 (17%)
+[2025-12-08 15:03:55,688] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 2/6 (33%)
+[2025-12-08 15:03:55,706] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 3/6 (50%)
+[2025-12-08 15:03:55,724] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 4/6 (67%)
+[2025-12-08 15:03:55,741] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 5/6 (83%)
+[2025-12-08 15:03:55,757] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 6/6 (100%)
+[2025-12-08 15:03:55,882] [[36mINFO[0m] [pipeline] [_process_set_compilation] Saved val Master Matrix: results\04_GLOBAL_FAILURE_TRACKING\Val_Set_Tracking.xlsx
+[2025-12-08 15:03:55,884] [[36mINFO[0m] [pipeline] [_process_set_compilation] Compiling 6 snapshots for test set...
+[2025-12-08 15:03:55,884] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 1/6 (17%)
+[2025-12-08 15:03:55,899] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 2/6 (33%)
+[2025-12-08 15:03:55,916] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 3/6 (50%)
+[2025-12-08 15:03:55,932] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 4/6 (67%)
+[2025-12-08 15:03:55,947] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 5/6 (83%)
+[2025-12-08 15:03:55,963] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 6/6 (100%)
+[2025-12-08 15:03:56,091] [[36mINFO[0m] [pipeline] [_process_set_compilation] Saved test Master Matrix: results\04_GLOBAL_FAILURE_TRACKING\Test_Set_Tracking.xlsx
+[2025-12-08 15:03:56,092] [[36mINFO[0m] [pipeline] [compile_tracking_data] Global Tracking compilation complete. Results in: results\04_GLOBAL_FAILURE_TRACKING
+[2025-12-08 15:03:56,092] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 15:03:56,092] [[36mINFO[0m] [pipeline] [main] PHASE 5: HYPERPARAMETER ANALYSIS
+[2025-12-08 15:03:56,093] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 15:03:56,093] [[36mINFO[0m] [pipeline] [analyze] Starting Hyperparameter Analysis...
+[2025-12-08 15:03:56,137] [[36mINFO[0m] [pipeline] [analyze] Found metrics - CV: 3, Val: 3, Test: 3
+[2025-12-08 15:03:56,168] [[36mINFO[0m] [pipeline] [_generate_optimal_ranges_report_multisheet] Generated multi-sheet optimal ranges: results\05_HYPERPARAMETER_ANALYSIS\optimal_ranges.xlsx
+[2025-12-08 15:03:56,196] [[36mINFO[0m] [pipeline] [_generate_summary_report] Generated summary report
+[2025-12-08 15:03:56,197] [[36mINFO[0m] [pipeline] [analyze] Generating visualizations for ExtraTreesRegressor...
+[2025-12-08 15:03:56,205] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:03:56,606] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:03:57,029] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:03:57,382] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:03:57,811] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:03:58,189] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:03:58,552] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:03:58,887] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:03:59,247] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:03:59,597] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:03:59,958] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:00,299] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:00,639] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:01,019] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:01,409] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:01,771] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:02,120] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:02,479] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:02,542] [[36mINFO[0m] [pipeline] [execute] Evaluated ExtraTreesRegressor | CV CMAE: 1.3724
+[2025-12-08 15:04:02,620] [[36mINFO[0m] [pipeline] [_finalize_results] Saved comprehensive results to results\03_HYPERPARAMETER_OPTIMIZATION\results\all_configurations.xlsx
+[2025-12-08 15:04:02,623] [[36mINFO[0m] [pipeline] [_finalize_results] Best config: ExtraTreesRegressor | CV CMAE: 1.3454
+[2025-12-08 15:04:02,632] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 15:04:02,632] [[36mINFO[0m] [pipeline] [main] PHASE 4: GLOBAL FAILURE TRACKING (COMPILER)
+[2025-12-08 15:04:02,633] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 15:04:02,633] [[36mINFO[0m] [pipeline] [compile_tracking_data] Starting Global Failure Tracking Compilation (Phase 4)...
+[2025-12-08 15:04:02,636] [[36mINFO[0m] [pipeline] [_process_set_compilation] Compiling 6 snapshots for val set...
+[2025-12-08 15:04:02,636] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 1/6 (17%)
+[2025-12-08 15:04:02,639] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 2/6 (33%)
+[2025-12-08 15:04:02,642] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 3/6 (50%)
+[2025-12-08 15:04:02,645] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 4/6 (67%)
+[2025-12-08 15:04:02,648] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 5/6 (83%)
+[2025-12-08 15:04:02,651] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 6/6 (100%)
+[2025-12-08 15:04:02,841] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:03,110] [[36mINFO[0m] [pipeline] [_process_set_compilation] Saved val Master Matrix: results\04_GLOBAL_FAILURE_TRACKING\Val_Set_Tracking.xlsx
+[2025-12-08 15:04:03,113] [[36mINFO[0m] [pipeline] [_process_set_compilation] Compiling 6 snapshots for test set...
+[2025-12-08 15:04:03,113] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 1/6 (17%)
+[2025-12-08 15:04:03,116] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 2/6 (33%)
+[2025-12-08 15:04:03,118] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 3/6 (50%)
+[2025-12-08 15:04:03,121] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 4/6 (67%)
+[2025-12-08 15:04:03,123] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 5/6 (83%)
+[2025-12-08 15:04:03,126] [[36mINFO[0m] [pipeline] [_process_set_compilation]   ... processing snapshot 6/6 (100%)
+[2025-12-08 15:04:03,155] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:03,258] [[36mINFO[0m] [pipeline] [_process_set_compilation] Saved test Master Matrix: results\04_GLOBAL_FAILURE_TRACKING\Test_Set_Tracking.xlsx
+[2025-12-08 15:04:03,259] [[36mINFO[0m] [pipeline] [compile_tracking_data] Global Tracking compilation complete. Results in: results\04_GLOBAL_FAILURE_TRACKING
+[2025-12-08 15:04:03,259] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 15:04:03,260] [[36mINFO[0m] [pipeline] [main] PHASE 5: HYPERPARAMETER ANALYSIS
+[2025-12-08 15:04:03,260] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 15:04:03,260] [[36mINFO[0m] [pipeline] [analyze] Starting Hyperparameter Analysis...
+[2025-12-08 15:04:03,304] [[36mINFO[0m] [pipeline] [analyze] Found metrics - CV: 3, Val: 3, Test: 3
+[2025-12-08 15:04:03,324] [[36mINFO[0m] [pipeline] [_generate_optimal_ranges_report_multisheet] Generated multi-sheet optimal ranges: results\05_HYPERPARAMETER_ANALYSIS\optimal_ranges.xlsx
+[2025-12-08 15:04:03,351] [[36mINFO[0m] [pipeline] [_generate_summary_report] Generated summary report
+[2025-12-08 15:04:03,352] [[36mINFO[0m] [pipeline] [analyze] Generating visualizations for ExtraTreesRegressor...
+[2025-12-08 15:04:03,357] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:03,513] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:03,711] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:03,862] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:04,051] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:04,222] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:04,388] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:04,572] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:04,732] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:04,943] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:05,099] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:05,337] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:05,468] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:05,760] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:05,905] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:06,136] [[36mINFO[0m] [pipeline] [analyze] HPO Analysis complete. Artifacts in results\05_HYPERPARAMETER_ANALYSIS
+[2025-12-08 15:04:06,137] [[36mINFO[0m] [pipeline] [main] [OK] HPO analysis complete
+[2025-12-08 15:04:06,137] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 15:04:06,137] [[36mINFO[0m] [pipeline] [main] PHASE 6: MODEL TRAINING
+[2025-12-08 15:04:06,137] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 15:04:06,138] [[36mINFO[0m] [pipeline] [train] Starting Final Model Training...
+[2025-12-08 15:04:06,140] [[36mINFO[0m] [pipeline] [train] Training ExtraTreesRegressor on 3110 samples with 167 features.
+[2025-12-08 15:04:06,264] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:06,613] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:06,959] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:07,306] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:07,607] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:07,928] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:08,261] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:08,594] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:08,965] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:09,324] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:09,683] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:10,023] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:10,339] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:10,672] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:10,998] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:11,357] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:11,702] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:12,051] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:12,400] [[33mWARNING[0m] [pipeline] [_plot_heatmap] Duplicate (x,y) combinations found for param_max_depth and param_n_estimators. The pivot table will use `aggfunc='mean'` to aggregate, which might hide repeated configurations.
+[2025-12-08 15:04:12,761] [[36mINFO[0m] [pipeline] [analyze] HPO Analysis complete. Artifacts in results\05_HYPERPARAMETER_ANALYSIS
+[2025-12-08 15:04:12,762] [[36mINFO[0m] [pipeline] [main] [OK] HPO analysis complete
+[2025-12-08 15:04:12,762] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 15:04:12,762] [[36mINFO[0m] [pipeline] [main] PHASE 6: MODEL TRAINING
+[2025-12-08 15:04:12,763] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 15:04:12,763] [[36mINFO[0m] [pipeline] [train] Starting Final Model Training...
+[2025-12-08 15:04:12,765] [[36mINFO[0m] [pipeline] [train] Training ExtraTreesRegressor on 3110 samples with 167 features.
+[2025-12-08 15:04:27,571] [[36mINFO[0m] [pipeline] [train] Training completed in 21.43 seconds.
+[2025-12-08 15:04:27,723] [[36mINFO[0m] [pipeline] [train] Model saved to results\06_FINAL_MODEL\final_model.pkl
+[2025-12-08 15:04:27,724] [[36mINFO[0m] [pipeline] [main] [OK] Model trained: ExtraTreesRegressor
+[2025-12-08 15:04:27,725] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 15:04:27,725] [[36mINFO[0m] [pipeline] [main] PHASE 7: PREDICTION
+[2025-12-08 15:04:27,725] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 15:04:27,725] [[36mINFO[0m] [pipeline] [predict] Generating predictions for val set (389 samples)...
+[2025-12-08 15:04:27,889] [[36mINFO[0m] [pipeline] [predict] Predictions saved to results\07_PREDICTIONS\predictions_val.xlsx
+[2025-12-08 15:04:27,889] [[36mINFO[0m] [pipeline] [predict] Generating predictions for test set (389 samples)...
+[2025-12-08 15:04:28,048] [[36mINFO[0m] [pipeline] [predict] Predictions saved to results\07_PREDICTIONS\predictions_test.xlsx
+[2025-12-08 15:04:28,049] [[36mINFO[0m] [pipeline] [main] [OK] Predictions generated
+[2025-12-08 15:04:28,049] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 15:04:28,049] [[36mINFO[0m] [pipeline] [main] PHASE 8: EVALUATION
+[2025-12-08 15:04:28,049] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 15:04:28,050] [[36mINFO[0m] [pipeline] [evaluate] Starting Evaluation for val set...
+[2025-12-08 15:04:28,140] [[36mINFO[0m] [pipeline] [evaluate] Evaluation complete. val CMAE: 0.8244°
+[2025-12-08 15:04:28,141] [[36mINFO[0m] [pipeline] [evaluate] Starting Evaluation for test set...
+[2025-12-08 15:04:28,229] [[36mINFO[0m] [pipeline] [evaluate] Evaluation complete. test CMAE: 1.6337°
+[2025-12-08 15:04:28,229] [[36mINFO[0m] [pipeline] [main] Validation CMAE:         0.8244
+[2025-12-08 15:04:28,229] [[36mINFO[0m] [pipeline] [main] Validation Accuracy@5°: 95.12%
+[2025-12-08 15:04:28,229] [[36mINFO[0m] [pipeline] [main] Test CMAE:               1.6337
+[2025-12-08 15:04:28,230] [[36mINFO[0m] [pipeline] [main] Test Accuracy@5°:       94.86%
+[2025-12-08 15:04:28,230] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 15:04:28,230] [[36mINFO[0m] [pipeline] [main] PHASE 9: DIAGNOSTICS
+[2025-12-08 15:04:28,230] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 15:04:28,230] [[36mINFO[0m] [pipeline] [generate_all] Generating diagnostics for val set...
+[2025-12-08 15:04:30,669] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-08 15:04:30,676] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-08 15:04:30,935] [[36mINFO[0m] [pipeline] [generate_all] Diagnostics generation complete for val.
+[2025-12-08 15:04:30,937] [[36mINFO[0m] [pipeline] [generate_all] Generating diagnostics for test set...
+[2025-12-08 15:04:33,621] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-08 15:04:33,627] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-08 15:04:33,887] [[36mINFO[0m] [pipeline] [generate_all] Diagnostics generation complete for test.
+[2025-12-08 15:04:33,889] [[36mINFO[0m] [pipeline] [main] [OK] Diagnostic plots generated
+[2025-12-08 15:04:33,889] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 15:04:33,889] [[36mINFO[0m] [pipeline] [main] PHASE 10: ERROR ANALYSIS
+[2025-12-08 15:04:33,889] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 15:04:33,890] [[36mINFO[0m] [pipeline] [analyze] Starting Error Analysis for val set...
+[2025-12-08 15:04:34,028] [[36mINFO[0m] [pipeline] [_detect_outliers] Detected 5 statistical outliers using 3sigma.
+[2025-12-08 15:04:34,123] [[36mINFO[0m] [pipeline] [analyze] Error Analysis complete for val.
+[2025-12-08 15:04:34,123] [[36mINFO[0m] [pipeline] [analyze] Starting Error Analysis for test set...
+[2025-12-08 15:04:34,245] [[36mINFO[0m] [pipeline] [train] Training completed in 21.48 seconds.
+[2025-12-08 15:04:34,259] [[36mINFO[0m] [pipeline] [_detect_outliers] Detected 6 statistical outliers using 3sigma.
+[2025-12-08 15:04:34,358] [[36mINFO[0m] [pipeline] [analyze] Error Analysis complete for test.
+[2025-12-08 15:04:34,358] [[36mINFO[0m] [pipeline] [main] [OK] Error analysis complete
+[2025-12-08 15:04:34,358] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 15:04:34,358] [[36mINFO[0m] [pipeline] [main] PHASE 11: ADVANCED ANALYTICS
+[2025-12-08 15:04:34,359] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 15:04:34,359] [[36mINFO[0m] [pipeline] [bootstrap] Bootstrapping disabled in config.
+[2025-12-08 15:04:34,359] [[36mINFO[0m] [pipeline] [ensemble] Ensembling disabled in config.
+[2025-12-08 15:04:34,360] [[36mINFO[0m] [pipeline] [run_stability_analysis] Stability Analysis disabled in config.
+[2025-12-08 15:04:34,360] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 15:04:34,360] [[36mINFO[0m] [pipeline] [main] PHASE 12: REPORTING
+[2025-12-08 15:04:34,360] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 15:04:34,398] [[36mINFO[0m] [pipeline] [generate_report] Starting Report Generation Phase...
+[2025-12-08 15:04:34,415] [[36mINFO[0m] [pipeline] [train] Model saved to results\06_FINAL_MODEL\final_model.pkl
+[2025-12-08 15:04:34,417] [[36mINFO[0m] [pipeline] [main] [OK] Model trained: ExtraTreesRegressor
+[2025-12-08 15:04:34,418] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 15:04:34,418] [[36mINFO[0m] [pipeline] [main] PHASE 7: PREDICTION
+[2025-12-08 15:04:34,418] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 15:04:34,418] [[36mINFO[0m] [pipeline] [predict] Generating predictions for val set (389 samples)...
+[2025-12-08 15:04:34,566] [[36mINFO[0m] [pipeline] [predict] Predictions saved to results\07_PREDICTIONS\predictions_val.xlsx
+[2025-12-08 15:04:34,566] [[36mINFO[0m] [pipeline] [predict] Generating predictions for test set (389 samples)...
+[2025-12-08 15:04:34,700] [[36mINFO[0m] [pipeline] [predict] Predictions saved to results\07_PREDICTIONS\predictions_test.xlsx
+[2025-12-08 15:04:34,700] [[36mINFO[0m] [pipeline] [main] [OK] Predictions generated
+[2025-12-08 15:04:34,701] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 15:04:34,701] [[36mINFO[0m] [pipeline] [main] PHASE 8: EVALUATION
+[2025-12-08 15:04:34,701] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 15:04:34,701] [[36mINFO[0m] [pipeline] [evaluate] Starting Evaluation for val set...
+[2025-12-08 15:04:34,703] [[36mINFO[0m] [pipeline] [_build_executive_summary] Generated Executive Summary: results\12_REPORTING\01_Executive_Summary_20251208_145610.pdf
+[2025-12-08 15:04:34,787] [[36mINFO[0m] [pipeline] [evaluate] Evaluation complete. val CMAE: 0.8142°
+[2025-12-08 15:04:34,788] [[36mINFO[0m] [pipeline] [evaluate] Starting Evaluation for test set...
+[2025-12-08 15:04:34,865] [[36mINFO[0m] [pipeline] [evaluate] Evaluation complete. test CMAE: 1.5171°
+[2025-12-08 15:04:34,866] [[36mINFO[0m] [pipeline] [main] Validation CMAE:         0.8142
+[2025-12-08 15:04:34,866] [[36mINFO[0m] [pipeline] [main] Validation Accuracy@5°: 95.12%
+[2025-12-08 15:04:34,866] [[36mINFO[0m] [pipeline] [main] Test CMAE:               1.5171
+[2025-12-08 15:04:34,867] [[36mINFO[0m] [pipeline] [main] Test Accuracy@5°:       94.60%
+[2025-12-08 15:04:34,867] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 15:04:34,867] [[36mINFO[0m] [pipeline] [main] PHASE 9: DIAGNOSTICS
+[2025-12-08 15:04:34,867] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 15:04:34,868] [[36mINFO[0m] [pipeline] [generate_all] Generating diagnostics for val set...
+[2025-12-08 15:04:37,639] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-08 15:04:37,646] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-08 15:04:37,902] [[36mINFO[0m] [pipeline] [generate_all] Diagnostics generation complete for val.
+[2025-12-08 15:04:37,904] [[36mINFO[0m] [pipeline] [generate_all] Generating diagnostics for test set...
+[2025-12-08 15:04:40,459] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-08 15:04:40,464] [[36mINFO[0m] [matplotlib.category] [update] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+[2025-12-08 15:04:40,727] [[36mINFO[0m] [pipeline] [generate_all] Diagnostics generation complete for test.
+[2025-12-08 15:04:40,729] [[36mINFO[0m] [pipeline] [main] [OK] Diagnostic plots generated
+[2025-12-08 15:04:40,730] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 15:04:40,730] [[36mINFO[0m] [pipeline] [main] PHASE 10: ERROR ANALYSIS
+[2025-12-08 15:04:40,730] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 15:04:40,730] [[36mINFO[0m] [pipeline] [analyze] Starting Error Analysis for val set...
+[2025-12-08 15:04:40,862] [[36mINFO[0m] [pipeline] [_detect_outliers] Detected 6 statistical outliers using 3sigma.
+[2025-12-08 15:04:40,949] [[36mINFO[0m] [pipeline] [analyze] Error Analysis complete for val.
+[2025-12-08 15:04:40,949] [[36mINFO[0m] [pipeline] [analyze] Starting Error Analysis for test set...
+[2025-12-08 15:04:41,080] [[36mINFO[0m] [pipeline] [_detect_outliers] Detected 6 statistical outliers using 3sigma.
+[2025-12-08 15:04:41,166] [[36mINFO[0m] [pipeline] [analyze] Error Analysis complete for test.
+[2025-12-08 15:04:41,167] [[36mINFO[0m] [pipeline] [main] [OK] Error analysis complete
+[2025-12-08 15:04:41,167] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 15:04:41,167] [[36mINFO[0m] [pipeline] [main] PHASE 11: ADVANCED ANALYTICS
+[2025-12-08 15:04:41,168] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 15:04:41,168] [[36mINFO[0m] [pipeline] [bootstrap] Bootstrapping disabled in config.
+[2025-12-08 15:04:41,168] [[36mINFO[0m] [pipeline] [ensemble] Ensembling disabled in config.
+[2025-12-08 15:04:41,169] [[36mINFO[0m] [pipeline] [run_stability_analysis] Stability Analysis disabled in config.
+[2025-12-08 15:04:41,169] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 15:04:41,169] [[36mINFO[0m] [pipeline] [main] PHASE 12: REPORTING
+[2025-12-08 15:04:41,170] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 15:04:41,185] [[36mINFO[0m] [pipeline] [generate_report] Starting Report Generation Phase...
+[2025-12-08 15:04:41,523] [[36mINFO[0m] [pipeline] [_build_executive_summary] Generated Executive Summary: results\12_REPORTING\01_Executive_Summary_20251208_145702.pdf
+[2025-12-08 15:04:42,850] [[36mINFO[0m] [pipeline] [_build_technical_report] Generated Technical Deep Dive: results\12_REPORTING\02_Technical_Deep_Dive_20251208_145610.pdf
+[2025-12-08 15:04:42,850] [[36mINFO[0m] [pipeline] [main] [OK] PDF Report: results\12_REPORTING\01_Executive_Summary_20251208_145610.pdf
+[2025-12-08 15:04:42,850] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 15:04:42,850] [[36mINFO[0m] [pipeline] [main] PHASE 13: REPRODUCIBILITY PACKAGING
+[2025-12-08 15:04:42,851] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 15:04:42,851] [[36mINFO[0m] [pipeline] [package] Creating Reproducibility Package...
+[2025-12-08 15:04:43,643] [[36mINFO[0m] [pipeline] [package] Reproducibility Package successfully created at: C:\Users\Sri\Projects\AI Driven Sample Space Analysis for Offshore Riser Behavior Modeling\scripts\heading_prediction_from_gyro_data\offshore_riser_ml\results\13_REPRODUCIBILITY_PACKAGE
+[2025-12-08 15:04:43,644] [[36mINFO[0m] [pipeline] [main] [OK] Reproducibility Package: results\13_REPRODUCIBILITY_PACKAGE
+[2025-12-08 15:04:43,644] [[36mINFO[0m] [pipeline] [main] 
+================================================================================
+[2025-12-08 15:04:43,644] [[36mINFO[0m] [pipeline] [main]     PIPELINE COMPLETED SUCCESSFULLY
+[2025-12-08 15:04:43,644] [[36mINFO[0m] [pipeline] [main] ================================================================================
+[2025-12-08 15:04:43,645] [[36mINFO[0m] [pipeline] [main] 
+>> Final Report:      results\12_REPORTING\01_Executive_Summary_20251208_145610.pdf
+[2025-12-08 15:04:43,645] [[36mINFO[0m] [pipeline] [main] >> Package:           results\13_REPRODUCIBILITY_PACKAGE
+[2025-12-08 15:04:43,645] [[36mINFO[0m] [pipeline] [main] >> Results Directory: C:\Users\Sri\Projects\AI Driven Sample Space Analysis for Offshore Riser Behavior Modeling\scripts\heading_prediction_from_gyro_data\offshore_riser_ml\results
+[2025-12-08 15:04:43,645] [[36mINFO[0m] [pipeline] [main] 
+================================================================================
+
+[2025-12-08 15:04:48,979] [[36mINFO[0m] [pipeline] [_build_technical_report] Generated Technical Deep Dive: results\12_REPORTING\02_Technical_Deep_Dive_20251208_145702.pdf
+[2025-12-08 15:04:48,980] [[36mINFO[0m] [pipeline] [main] [OK] PDF Report: results\12_REPORTING\01_Executive_Summary_20251208_145702.pdf
+[2025-12-08 15:04:48,980] [[36mINFO[0m] [pipeline] [main] 
+============================================================
+[2025-12-08 15:04:48,981] [[36mINFO[0m] [pipeline] [main] PHASE 13: REPRODUCIBILITY PACKAGING
+[2025-12-08 15:04:48,981] [[36mINFO[0m] [pipeline] [main] ============================================================
+[2025-12-08 15:04:48,981] [[36mINFO[0m] [pipeline] [package] Creating Reproducibility Package...
+[2025-12-08 15:04:49,671] [[36mINFO[0m] [pipeline] [package] Reproducibility Package successfully created at: C:\Users\Sri\Projects\AI Driven Sample Space Analysis for Offshore Riser Behavior Modeling\scripts\heading_prediction_from_gyro_data\offshore_riser_ml\results\13_REPRODUCIBILITY_PACKAGE
+[2025-12-08 15:04:49,672] [[36mINFO[0m] [pipeline] [main] [OK] Reproducibility Package: results\13_REPRODUCIBILITY_PACKAGE
+[2025-12-08 15:04:49,672] [[36mINFO[0m] [pipeline] [main] 
+================================================================================
+[2025-12-08 15:04:49,672] [[36mINFO[0m] [pipeline] [main]     PIPELINE COMPLETED SUCCESSFULLY
+[2025-12-08 15:04:49,673] [[36mINFO[0m] [pipeline] [main] ================================================================================
+[2025-12-08 15:04:49,673] [[36mINFO[0m] [pipeline] [main] 
+>> Final Report:      results\12_REPORTING\01_Executive_Summary_20251208_145702.pdf
+[2025-12-08 15:04:49,673] [[36mINFO[0m] [pipeline] [main] >> Package:           results\13_REPRODUCIBILITY_PACKAGE
+[2025-12-08 15:04:49,673] [[36mINFO[0m] [pipeline] [main] >> Results Directory: C:\Users\Sri\Projects\AI Driven Sample Space Analysis for Offshore Riser Behavior Modeling\scripts\heading_prediction_from_gyro_data\offshore_riser_ml\results
+[2025-12-08 15:04:49,674] [[36mINFO[0m] [pipeline] [main] 
+================================================================================
+

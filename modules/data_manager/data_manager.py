@@ -1,3 +1,14 @@
+"""
+DataManager for the Offshore Riser ML Pipeline.
+
+This module is responsible for the initial data handling phase of the pipeline.
+Its primary responsibilities include:
+- Loading the raw dataset from a specified file (Excel or CSV).
+- Performing robust validation to ensure data quality and integrity.
+- Computing derived features necessary for model training and stratification,
+  such as angle from sin/cos components and various data bins.
+- Generating and saving initial data reports and validated data artifacts.
+"""
 import pandas as pd
 import numpy as np
 import os
@@ -11,7 +22,13 @@ from utils.exceptions import DataValidationError
 
 class DataManager:
     """
-    Load, validate, and prepare raw input data.
+    Manages loading, validation, and preparation of the raw input data.
+    
+    This class acts as the first stage of the ML pipeline, taking the raw
+    dataset and transforming it into a validated and feature-enriched DataFrame
+    ready for the splitting and training phases. It ensures data quality,
+    handles potential path traversal issues, and computes derived columns
+    for stratification.
     """
     
     def __init__(self, config: dict, logger: logging.Logger):
@@ -60,25 +77,53 @@ class DataManager:
 
     def load_data(self) -> pd.DataFrame:
         """Load data from file path specified in config."""
-        file_path = self.config['data']['file_path']
+        file_path_str = self.config['data']['file_path']
         precision = self.config['data'].get('precision', 'float32')
         
-        if not os.path.exists(file_path):
-            raise DataValidationError(f"Data file not found: {file_path}")
+        # FIX #74: Validate file_path to prevent path traversal.
+        project_root = Path.cwd() # The current working directory of the project
+        allowed_data_dir = project_root / "data" / "raw"
+        
+        # Resolve the provided file_path relative to the project root
+        absolute_file_path = (project_root / file_path_str).resolve()
+        
+        # Ensure the file path is within the allowed data directory
+        # Path.is_relative_to() (Python 3.9+) or manual check for older versions
+        try:
+            absolute_file_path.relative_to(allowed_data_dir)
+        except ValueError:
+            raise DataValidationError(
+                f"Data file path '{file_path_str}' is outside the allowed data directory: "
+                f"'{allowed_data_dir}'. Potential path traversal attempt detected."
+            )
+
+        if not os.path.exists(absolute_file_path):
+            raise DataValidationError(f"Data file not found: {absolute_file_path}")
             
-        self.logger.info(f"Loading data from {file_path}")
+        self.logger.info(f"Loading data from {absolute_file_path}")
         
         try:
-            ext = Path(file_path).suffix.lower()
+            ext = absolute_file_path.suffix.lower()
             if ext == '.xlsx':
-                self.data = pd.read_excel(file_path)
+                self.data = pd.read_excel(absolute_file_path)
             elif ext == '.csv':
-                self.data = pd.read_csv(file_path)
+                self.data = pd.read_csv(absolute_file_path)
             else:
                 raise DataValidationError(f"Unsupported file extension: {ext}")
                 
             # Cast numeric columns
             numeric_cols = self.data.select_dtypes(include=[np.number]).columns
+
+            # FIX #84: Add warning for unsafe precision casting to float16
+            if precision == 'float16':
+                finfo = np.finfo(np.float16)
+                for col in numeric_cols:
+                    if self.data[col].max() > finfo.max or self.data[col].min() < finfo.min:
+                        self.logger.warning(
+                            f"Column '{col}' has values outside the float16 range. "
+                            f"Casting may result in overflow/underflow. Consider using float32."
+                        )
+
             self.data[numeric_cols] = self.data[numeric_cols].astype(precision)
             
             self.logger.info(f"Loaded {len(self.data)} rows, {len(self.data.columns)} columns")
@@ -89,6 +134,10 @@ class DataManager:
 
     def validate_columns(self) -> None:
         """Ensure all required columns from config exist."""
+        # FIX #29: Add check for empty or None dataframe
+        if self.data is None or self.data.empty:
+            raise DataValidationError("Dataframe is empty or None. Cannot validate columns.")
+
         required = [
             self.config['data']['target_sin'],
             self.config['data']['target_cos'],
@@ -160,7 +209,8 @@ class DataManager:
 
     def compute_derived_columns(self) -> None:
         """Compute angle_deg, angle_bin, hs_bin, combined_bin."""
-        self.data = self.data.copy()
+        # FIX #19: Use a deep copy to prevent modifying the original dataframe view.
+        self.data = self.data.copy(deep=True)
         sin_col = self.config['data']['target_sin']
         cos_col = self.config['data']['target_cos']
         hs_col = self.config['data']['hs_column']
@@ -170,19 +220,30 @@ class DataManager:
         angle_deg = np.degrees(angle_rad)
         self.data['angle_deg'] = angle_deg % 360.0
         
+        # FIX #54: Clip the value to avoid 360 mapping to bin 0 and causing collisions.
+        self.data['angle_deg'] = np.clip(self.data['angle_deg'], 0, 359.999999)
+
         # 2. Compute Angle Bins
         n_angle_bins = self.config['splitting']['angle_bins']
         bin_width = 360.0 / n_angle_bins
-        self.data['angle_bin'] = np.floor(self.data['angle_deg'] / bin_width).astype(int) % n_angle_bins
+        self.data['angle_bin'] = np.floor(self.data['angle_deg'] / bin_width).astype(int)
         
         # 3. Compute Hs Bins
         n_hs_bins = self.config['splitting']['hs_bins']
         method = self.config['splitting'].get('hs_binning_method', 'quantile')
         
         if method == 'quantile':
-            self.data['hs_bin'], _ = pd.qcut(
+            self.data['hs_bin'], retbins = pd.qcut(
                 self.data[hs_col], q=n_hs_bins, labels=False, duplicates='drop', retbins=True
             )
+            # FIX #76: Check if qcut produced the expected number of bins.
+            actual_bins = len(retbins) - 1
+            if actual_bins != n_hs_bins:
+                self.logger.warning(
+                    f"qcut for hs_bin was configured for {n_hs_bins} bins, but "
+                    f"only created {actual_bins} due to duplicate values in data. "
+                    "This may affect stratification."
+                )
         else:
             self.data['hs_bin'], _ = pd.cut(
                 self.data[hs_col], bins=n_hs_bins, labels=False, retbins=True

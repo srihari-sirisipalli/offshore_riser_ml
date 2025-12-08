@@ -25,6 +25,7 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.neural_network import MLPRegressor
 from sklearn.kernel_ridge import KernelRidge
 from sklearn.multioutput import MultiOutputRegressor
+from sklearn.base import BaseEstimator # Added for FIX #41
 
 class ModelFactory:
     """
@@ -78,7 +79,7 @@ class ModelFactory:
     }
 
     @classmethod
-    def create(cls, model_name: str, params: Dict[str, Any] = None) -> Any:
+    def create(cls, model_name: str, params: Dict[str, Any] = None) -> BaseEstimator:
         """
         Create and return an instantiated model.
         """
@@ -88,12 +89,18 @@ class ModelFactory:
         # 1. Check Native Models
         if model_name in cls.NATIVE_MODELS:
             model_class = cls.NATIVE_MODELS[model_name]
+            # FIX #81: Ensure the model class is actually callable.
+            if not callable(model_class):
+                raise ValueError(f"Model class for '{model_name}' is not callable or could not be loaded. Check Sci-kit Learn installation and imports.")
             valid_params = cls._filter_params(model_class, params)
             return model_class(**valid_params)
 
         # 2. Check Wrapped Models
         elif model_name in cls.WRAPPED_MODELS:
             model_class = cls.WRAPPED_MODELS[model_name]
+            # FIX #81: Ensure the model class is actually callable.
+            if not callable(model_class):
+                raise ValueError(f"Model class for '{model_name}' is not callable or could not be loaded. Check Sci-kit Learn installation and imports.")
             valid_params = cls._filter_params(model_class, params)
             base_estimator = model_class(**valid_params)
             
@@ -121,10 +128,6 @@ class ModelFactory:
             if p.kind in (p.POSITIONAL_OR_KEYWORD, p.KEYWORD_ONLY)
         ]
         
-        # Always allow **kwargs if the model supports it
-        has_kwargs = any(p.kind == p.VAR_KEYWORD for p in sig.parameters.values())
-        
-        if has_kwargs:
-            return params
-            
+        # The 'has_kwargs' logic is typically not for arbitrary parameters in sklearn,
+        # but for passing args to internal components. Thus, we always filter.
         return {k: v for k, v in params.items() if k in valid_keys}

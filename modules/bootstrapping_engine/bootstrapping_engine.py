@@ -40,12 +40,21 @@ class BootstrappingEngine:
         
         # 1. Setup Directories
         base_dir = self.config.get('outputs', {}).get('base_results_dir', 'results')
-        output_dir = Path(base_dir) / "09_ADVANCED_ANALYTICS" / "bootstrapping" / split_name
+        output_dir = Path(base_dir) / "11_ADVANCED_ANALYTICS" / "bootstrapping" / split_name
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # 2. Configure Parameters
         n_samples = self.boot_config.get('num_samples', 500)
         confidence = self.boot_config.get('confidence_level', 0.95)
+        
+        # FIX #93: Validate confidence_level
+        if not (0 < confidence < 1):
+            self.logger.warning(
+                f"Invalid confidence level ({confidence}). "
+                "Must be between 0 and 1 (exclusive). Defaulting to 0.95."
+            )
+            confidence = 0.95
+
         # Default sample ratio is 1.0 (sample size = dataset size), typical for bootstrap
         sample_ratio = self.boot_config.get('sample_ratio', 1.0) 
         
@@ -72,16 +81,45 @@ class BootstrappingEngine:
         """Run the resampling loop."""
         results = []
         n_rows = len(df)
+        
+        # FIX #24: Validate sample_ratio. Warn and cap if it's statistically unusual or too large.
+        if not (0 < ratio): # Must be positive
+            self.logger.warning(
+                f"Sample ratio ({ratio}) must be greater than 0. Defaulting to 1.0."
+            )
+            ratio = 1.0
+        elif ratio > 1.0 and ratio <= 2.0: # Allow slight oversampling with warning
+             self.logger.warning(f"Sample ratio ({ratio}) is greater than 1.0. "
+                                  "This means bootstrap samples will be larger than the original dataset. "
+                                  "Ensure this is intended. For typical bootstrapping, ratio is 1.0.")
+        elif ratio > 2.0: # Cap very large ratios
+             self.logger.warning(f"Sample ratio ({ratio}) is very large. Capping at 2.0 to prevent excessive memory usage.")
+             ratio = 2.0
+
         size = int(n_rows * ratio)
         
+        # FIX #70: Warn if sample size is too small for meaningful bootstrapping.
+        min_meaningful_size = self.boot_config.get('min_bootstrap_sample_size', 5) 
+        if size < min_meaningful_size:
+            self.logger.warning(
+                f"Calculated bootstrap sample size ({size}) is less than the recommended "
+                f"minimum ({min_meaningful_size}). This may affect statistical significance. "
+                "Consider increasing 'num_samples' or 'sample_ratio'."
+            )
+        
+        # FIX #57: Use a seeded random number generator for reproducibility.
+        # Fallback to the main splitting seed if the internal one isn't found.
+        seed = self.config.get('_internal_seeds', {}).get('bootstrap', self.config['splitting']['seed'])
+        rng = np.random.default_rng(seed)
+
         # Pre-convert to numpy for speed
         true_angles = df['true_angle'].values
         pred_angles = df['pred_angle'].values
         abs_errors = df['abs_error'].values
         
         for i in range(n_samples):
-            # Resample indices with replacement
-            indices = np.random.choice(n_rows, size=size, replace=True)
+            # Resample indices with replacement using the seeded generator
+            indices = rng.choice(n_rows, size=size, replace=True)
             
             sample_true = true_angles[indices]
             sample_pred = pred_angles[indices]
@@ -92,8 +130,8 @@ class BootstrappingEngine:
                 'sample_id': i,
                 'cmae': compute_cmae(sample_true, sample_pred),
                 'crmse': compute_crmse(sample_true, sample_pred),
-                'accuracy_5deg': (np.sum(sample_abs_err <= 5) / size) * 100,
-                'accuracy_10deg': (np.sum(sample_abs_err <= 10) / size) * 100
+                'accuracy_5deg': (np.sum(sample_abs_err <= 5) / size) * 100 if size > 0 else 0,
+                'accuracy_10deg': (np.sum(sample_abs_err <= 10) / size) * 100 if size > 0 else 0
             }
             results.append(metrics)
             

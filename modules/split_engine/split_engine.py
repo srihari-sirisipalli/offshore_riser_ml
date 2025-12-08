@@ -1,3 +1,11 @@
+"""
+SplitEngine for the Offshore Riser ML Pipeline.
+
+This module is responsible for splitting the validated and feature-enriched
+dataset into training, validation, and test sets. It employs a smart
+stratification strategy to ensure that the distribution of key data segments
+is preserved across all splits, which is crucial for robust model evaluation.
+"""
 import pandas as pd
 import numpy as np
 import os
@@ -9,8 +17,14 @@ from sklearn.model_selection import train_test_split
 
 class SplitEngine:
     """
-    Splits data into Train/Val/Test sets using Stratified Sampling.
-    Handles rare bins by falling back to broader stratification keys if necessary.
+    Splits data into Train/Val/Test sets using a robust stratified sampling strategy.
+
+    This engine first determines the best column for stratification by analyzing
+    bin distributions. It falls back from a high-cardinality 'combined_bin' to
+    broader bins like 'hs_bin' or 'angle_bin' if necessary. It also handles
+    rare data points (from bins with few members) by either moving them to the
+    training set or dropping them, based on the configuration. This ensures
+    that the splits are balanced and representative of the overall dataset.
     """
     
     def __init__(self, config: dict, logger: logging.Logger):
@@ -57,11 +71,17 @@ class SplitEngine:
         Check if combined_bin is viable for stratification.
         If too many singletons, fallback to hs_bin or angle_bin.
         """
-        min_samples = 2 # Need at least 2 samples to split (1 train, 1 test)
+        # FIX #52: To survive two splits (train/val/test), we need at least 3 samples per bin.
+        min_samples = 3
         
         # Check Combined Bin
         counts = df['combined_bin'].value_counts()
         singletons = (counts < min_samples).sum()
+        
+        if not len(counts):
+             self.logger.error("Stratification column 'combined_bin' has no data.")
+             return None
+
         singleton_pct = singletons / len(counts) * 100
         
         self.logger.info(f"Bin Analysis (combined_bin): {singletons} bins have < {min_samples} samples ({singleton_pct:.1f}%)")
@@ -77,13 +97,18 @@ class SplitEngine:
         if singletons_hs == 0:
             self.logger.warning("Too many rare combined bins. Falling back to 'hs_bin' stratification.")
             return 'hs_bin'
-            
+        else:
+            # FIX #20: Add logging for why fallback is skipped.
+            self.logger.warning(f"Could not use 'hs_bin' for stratification, it has {singletons_hs} bins with < {min_samples} samples.")
+
         # Fallback 2: Angle Bin
         counts_ang = df['angle_bin'].value_counts()
         if (counts_ang < min_samples).sum() == 0:
             self.logger.warning("Falling back to 'angle_bin' stratification.")
             return 'angle_bin'
-            
+        else:
+            self.logger.warning(f"Could not use 'angle_bin' for stratification, it also has rare bins.")
+
         # Fallback 3: No Stratification (Random)
         self.logger.warning("Cannot stratify safely. Using random splitting.")
         return None
@@ -94,28 +119,34 @@ class SplitEngine:
         1. Full -> TrainVal + Test
         2. TrainVal -> Train + Val
         """
-        seed = self.config['splitting']['seed']
+        # FIX #67: Use the propagated seed for splitting from _internal_seeds.
+        seed = self.config.get('_internal_seeds', {}).get('split', self.config['splitting']['seed'])
         test_size = self.config['splitting']['test_size']
         val_size = self.config['splitting']['val_size']
         
-        # If stratification column has any classes with only 1 member, 
-        # train_test_split will error. We filter them out for the split logic 
-        # or handle them. Here we use the 'try/except' approach or pre-filtering.
-        
+        # FIX #52: Use a more robust minimum sample count for stratification.
+        # A class needs at least one sample for each set: train, val, test.
+        min_samples_for_stratify = 3
+        drop_incomplete_bins = self.config['splitting'].get('drop_incomplete_bins', False)
+
         # Pre-filter for valid stratification if strat_col exists
         if strat_col:
-            # Check for bins with only 1 sample
             counts = df[strat_col].value_counts()
-            valid_bins = counts[counts >= 2].index
+            valid_bins = counts[counts >= min_samples_for_stratify].index
             
             # If we have rows that can't be stratified
             rare_mask = ~df[strat_col].isin(valid_bins)
             if rare_mask.sum() > 0:
-                self.logger.warning(f"{rare_mask.sum()} samples belong to singleton bins. They will be put into Train set automatically.")
-                
-                # Separate rare data (forced to train) from stratifiable data
-                rare_data = df[rare_mask]
-                strat_data = df[~rare_mask]
+                # FIX #83: Implement drop_incomplete_bins logic.
+                if drop_incomplete_bins:
+                    self.logger.warning(f"{rare_mask.sum()} samples belong to incomplete bins and will be DROPPED.")
+                    strat_data = df[~rare_mask]
+                    rare_data = pd.DataFrame() # Ensure rare_data is empty
+                else:
+                    self.logger.warning(f"{rare_mask.sum()} samples belong to bins with < {min_samples_for_stratify} members. They will be put into Train set automatically.")
+                    # Separate rare data (forced to train) from stratifiable data
+                    rare_data = df[rare_mask]
+                    strat_data = df[~rare_mask]
             else:
                 rare_data = pd.DataFrame()
                 strat_data = df
@@ -125,16 +156,22 @@ class SplitEngine:
 
         # --- SPLIT 1: Separate Test ---
         # Stratify if possible
-        stratify_target = strat_data[strat_col] if strat_col else None
+        stratify_target = strat_data[strat_col] if strat_col and not strat_data.empty else None
         
         try:
-            train_val_main, test = train_test_split(
-                strat_data,
-                test_size=test_size,
-                random_state=seed,
-                shuffle=True,
-                stratify=stratify_target
-            )
+            # Handle case where strat_data might be empty after filtering
+            if strat_data.empty:
+                self.logger.warning("No data left for stratification after filtering rare bins. Performing random split on original data.")
+                train_val_main, test = train_test_split(df, test_size=test_size, random_state=seed, shuffle=True)
+                strat_col = None # Ensure no further stratification is attempted
+            else:
+                train_val_main, test = train_test_split(
+                    strat_data,
+                    test_size=test_size,
+                    random_state=seed,
+                    shuffle=True,
+                    stratify=stratify_target
+                )
         except ValueError as e:
             self.logger.error(f"Stratification failed: {e}. Falling back to random split.")
             train_val_main, test = train_test_split(
@@ -143,23 +180,27 @@ class SplitEngine:
                 random_state=seed,
                 shuffle=True
             )
+            strat_col = None # Ensure no further stratification is attempted
 
         # --- SPLIT 2: Separate Validation ---
         # Adjust val_size to be relative to train_val
-        # If Total=100, Test=10, TrainVal=90. We want Val=10.
-        # So val_ratio = 10 / 90 = 0.111...
         val_ratio_adjusted = val_size / (1.0 - test_size)
         
-        stratify_target_tv = train_val_main[strat_col] if strat_col else None
+        # Only stratify if we could do it in the first stage and data exists
+        stratify_target_tv = train_val_main[strat_col] if strat_col and not train_val_main.empty else None
         
         try:
-            train_main, val = train_test_split(
-                train_val_main,
-                test_size=val_ratio_adjusted,
-                random_state=seed,
-                shuffle=True,
-                stratify=stratify_target_tv
-            )
+            if train_val_main.empty:
+                 # This case can happen if test_size is very large
+                 train_main, val = pd.DataFrame(), pd.DataFrame()
+            else:
+                train_main, val = train_test_split(
+                    train_val_main,
+                    test_size=val_ratio_adjusted,
+                    random_state=seed,
+                    shuffle=True,
+                    stratify=stratify_target_tv
+                )
         except ValueError:
              self.logger.warning("Secondary stratification failed. Using random split for Validation.")
              train_main, val = train_test_split(

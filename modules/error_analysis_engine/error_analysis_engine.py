@@ -39,7 +39,7 @@ class ErrorAnalysisEngine:
         
         # 1. Setup Directory
         base_dir = self.config.get('outputs', {}).get('base_results_dir', 'results')
-        output_dir = Path(base_dir) / "09_ERROR_ANALYSIS" / split_name
+        output_dir = Path(base_dir) / "10_ERROR_ANALYSIS"
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # 2. Threshold Analysis
@@ -66,13 +66,18 @@ class ErrorAnalysisEngine:
 
     def _analyze_thresholds(self, df: pd.DataFrame, output_dir: Path) -> None:
         """Identify samples exceeding specific error thresholds."""
+        # FIX #95: Early return if dataframe is empty.
+        if df.empty:
+            self.logger.warning("Empty predictions dataframe provided for threshold analysis. Skipping.")
+            return
+
         thresholds = self.ea_config.get('error_thresholds', [5, 10, 20])
         
         summary = []
         for t in thresholds:
             high_error_df = df[df['abs_error'] > t].copy()
             count = len(high_error_df)
-            pct = (count / len(df)) * 100
+            pct = (count / len(df)) * 100 # len(df) is guaranteed > 0 here
             
             summary.append({
                 'threshold': t,
@@ -94,6 +99,10 @@ class ErrorAnalysisEngine:
         errors = df['abs_error']
         
         if method == '3sigma':
+            # FIX #23: Handle zero variance in errors to prevent RuntimeWarning/error in stats.zscore.
+            if errors.std() == 0:
+                self.logger.info("Absolute errors have zero variance. No outliers detected by Z-score method.")
+                return
             z_scores = np.abs(stats.zscore(errors))
             outliers = df[z_scores > 3].copy()
         elif method == 'iqr':
@@ -129,7 +138,10 @@ class ErrorAnalysisEngine:
         numeric_df = df.select_dtypes(include=[np.number])
         
         # Compute correlation with abs_error
-        correlations = numeric_df.corrwith(numeric_df[target_col]).sort_values(ascending=False)
+        correlations = numeric_df.corrwith(numeric_df[target_col])
+        
+        # FIX #79: Drop NaN values from correlations (e.g., if a feature is constant).
+        correlations = correlations.dropna().sort_values(ascending=False)
         
         # Filter out self-correlation and ignored columns
         correlations = correlations.drop(labels=[target_col] + [c for c in ignore_cols if c in correlations.index], errors='ignore')
@@ -145,7 +157,8 @@ class ErrorAnalysisEngine:
         mean_bias = df['error'].mean()
         
         # Bias by Angle Quadrant (0-90, 90-180, etc.)
-        df['quadrant'] = pd.cut(df['true_angle'], bins=[0, 90, 180, 270, 360], labels=['Q1', 'Q2', 'Q3', 'Q4'])
+        df['quadrant'] = pd.cut(df['true_angle'], bins=[0, 90, 180, 270, 360], 
+                                labels=['Q1', 'Q2', 'Q3', 'Q4'], include_lowest=True)
         quad_bias = df.groupby('quadrant', observed=False)['error'].agg(['mean', 'std', 'count']).reset_index()
         
         quad_bias.to_excel(output_dir / "bias_analysis_by_quadrant.xlsx", index=False)

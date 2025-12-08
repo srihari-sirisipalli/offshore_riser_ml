@@ -30,7 +30,6 @@ class ConfigurationManager:
         self.schema = self._load_json(self.schema_path)
         
         self._validate_schema()
-        self._apply_defaults()
         self._validate_logic()
         self._propagate_seeds()
         
@@ -82,15 +81,6 @@ class ConfigurationManager:
         except jsonschema.ValidationError as e:
             raise ConfigurationError(f"Schema validation failed: {e.message}")
 
-    def _apply_defaults(self) -> None:
-        # Shallow pass for top-level defaults
-        if 'precision' not in self.config['data']:
-            self.config['data']['precision'] = 'float32'
-        if 'hs_binning_method' not in self.config['splitting']:
-            self.config['splitting']['hs_binning_method'] = 'quantile'
-        if 'logging' not in self.config:
-            self.config['logging'] = {'level': 'INFO', 'log_to_file': True, 'log_to_console': True}
-
     def _validate_logic(self) -> None:
         test_size = self.config['splitting']['test_size']
         val_size = self.config['splitting']['val_size']
@@ -103,11 +93,11 @@ class ConfigurationManager:
 
     def _propagate_seeds(self) -> None:
         master_seed = self.config['splitting']['seed']
+        # FIX #34: Use larger, non-overlapping offsets for seeds to improve isolation.
         self.config['_internal_seeds'] = {
             'split': master_seed,
-            'cv': master_seed + 1,
-            'model': master_seed + 2,
-            'bootstrap': master_seed + 3,
-            'stability_base': master_seed + 100
+            'cv': master_seed + 1000,
+            'model': master_seed + 2000,
+            'bootstrap': master_seed + 3000,
+            'stability_base': master_seed + 10000
         }
-        np.random.seed(master_seed)

@@ -77,6 +77,9 @@ class GlobalErrorTrackingEngine:
             else:
                 master_df['True_Angle'] = 0.0
 
+        # FIX #62: Set master_df index to 'row_index' for safe merging
+        master_df = master_df.set_index('row_index')
+
         # 2. Find and Merge Snapshots
         pattern = str(snapshot_dir / f"*_{set_name}.csv")
         csv_files = sorted(glob.glob(pattern))
@@ -88,26 +91,35 @@ class GlobalErrorTrackingEngine:
         self.logger.info(f"Compiling {len(csv_files)} snapshots for {set_name} set...")
 
         error_cols = []
-        for f in csv_files:
+        num_files = len(csv_files)
+        # FIX #92: Add progress indicator for compiling snapshots.
+        log_interval = max(1, num_files // 10) # Log roughly 10 times.
+
+        for i, f in enumerate(csv_files):
+            if (i + 1) % log_interval == 0 or i == num_files - 1:
+                self.logger.info(f"  ... processing snapshot {i+1}/{num_files} ({(i+1)/num_files:.0%})")
+                
             try:
                 # Filename format: trial_001_val.csv
                 trial_id = Path(f).stem.replace(f"_{set_name}", "") 
                 
                 # Load snapshot
-                snap = pd.read_csv(f)
+                # FIX #26: Specify encoding for pd.read_csv
+                snap = pd.read_csv(f, encoding='utf-8')
                 
                 # We only need the error column, renamed to the Trial ID
                 if 'row_index' in snap.columns and 'abs_error' in snap.columns:
                     snap_indexed = snap.set_index('row_index')
                     col_name = f"{trial_id}_Error"
                     
-                    # Merge left to ensure we keep all original rows from base_df
-                    # This handles cases where a fold might have missed a row (unlikely but safe)
-                    merged_col = base_df.merge(snap_indexed[['abs_error']], 
-                                             left_index=True, right_index=True, 
-                                             how='left')['abs_error']
+                    # FIX #62: Use reindex to safely merge and detect missing rows
+                    merged_series = snap_indexed['abs_error'].reindex(master_df.index)
                     
-                    master_df[col_name] = merged_col
+                    nan_count = merged_series.isna().sum()
+                    if nan_count > 0:
+                        self.logger.warning(f"Snapshot {f} is missing {nan_count} rows from the base dataset for {set_name}. NaNs introduced in '{col_name}'.")
+
+                    master_df[col_name] = merged_series
                     error_cols.append(col_name)
             except Exception as e:
                 self.logger.warning(f"Skipping corrupt snapshot {f}: {e}")
@@ -134,6 +146,9 @@ class GlobalErrorTrackingEngine:
 
         # 4. Final Column Ordering
         # Order: Index, Hs, Angle, FLAGS, METRICS, RAW DATA
+        # Reset index to make 'row_index' a column again for final Excel output
+        master_df = master_df.reset_index()
+
         metadata_cols = ['row_index', 'Hs', 'True_Angle']
         flag_cols = ['Is_Persistent_Failure', 'Failure_Rate_%', 'Min_Error', 'Mean_Error']
         
@@ -150,20 +165,13 @@ class GlobalErrorTrackingEngine:
         except Exception as e:
             self.logger.error(f"Failed to save Excel matrix for {set_name}: {e}")
 
-    # -------------------------------------------------------------------------
-    # LEGACY METHODS (Retained for compatibility with existing calls if any)
-    # -------------------------------------------------------------------------
-    def track(self, round_predictions: List[pd.DataFrame], feature_history: List[Dict], run_id: str) -> Dict[str, Any]:
-        """Legacy tracking method (optional use)."""
-        if not self.track_config.get('enabled', True):
-            return {}
-        # ... (Existing legacy logic can remain here or be passed) ...
-        return {}
+    # FIX #15, #6: Remove legacy/dead code methods that are not called and do nothing.
+    # def track(self, round_predictions: List[pd.DataFrame], feature_history: List[Dict], run_id: str) -> Dict[str, Any]:
+    #     """Legacy tracking method (optional use)."""
+    #     if not self.track_config.get('enabled', True):
+    #         return {}
+    #     return {}
 
-    def _build_evolution_matrix(self, predictions_list: List[pd.DataFrame]) -> pd.DataFrame:
-        matrix = pd.DataFrame({'row_index': predictions_list[0]['row_index']})
-        for i, df in enumerate(predictions_list):
-            round_col = f"round_{i+1}_error"
-            temp = df[['row_index', 'abs_error']].rename(columns={'abs_error': round_col})
-            matrix = matrix.merge(temp, on='row_index', how='left')
-        return matrix
+    # def _build_evolution_matrix(self, predictions_list: List[pd.DataFrame]) -> pd.DataFrame:
+    #     # This method was also unused and served no purpose.
+    #     pass

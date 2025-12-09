@@ -17,6 +17,9 @@ def mock_logger():
 def base_config(tmp_path):
     """Provides a base configuration for the SplitEngine."""
     return {
+        "data": {
+            "hs_column": "hs"
+        },
         "splitting": {
             "test_size": 0.2,
             "val_size": 0.2,

@@ -40,7 +40,7 @@ class EvaluationEngine:
         metrics = self.compute_metrics(predictions)
         
         # 3. Identify Extremes (Best/Worst samples)
-        # FIX: Critical Bug #17 - Method was called but not defined
+        # FIX #17: Implemented _identify_extremes method below to prevent AttributeError
         best_df, worst_df = self._identify_extremes(predictions)
         
         # 4. Save Artifacts
@@ -92,7 +92,7 @@ class EvaluationEngine:
         metrics.update(self._compute_accuracy_bands(abs_error))
         
         # --- 4. Percentiles ---
-        # FIX: Low Bug #77 - Use nanpercentile to handle potential NaNs safely
+        # FIX #77: Use nanpercentile to handle potential NaNs safely
         for p in [50, 75, 90, 95, 99]:
             metrics[f'percentile_{p}'] = np.nanpercentile(abs_error, p)
             
@@ -113,7 +113,7 @@ class EvaluationEngine:
         results = {}
         total = len(abs_error)
         
-        # FIX: High Bug #21 - Prevent Division by Zero
+        # FIX #21: Prevent Division by Zero
         if total == 0:
             for b in bands:
                 results[f'accuracy_at_{b}deg'] = 0.0
@@ -125,7 +125,7 @@ class EvaluationEngine:
             else:
                 count = np.sum(abs_error <= b)
             
-            # FIX: Critical Bug #1 - Changed multiplier from 10 to 100
+            # FIX #1: Changed multiplier from 10 to 100 for correct percentage
             results[f'accuracy_at_{b}deg'] = (count / total) * 100
             
         return results
@@ -133,7 +133,7 @@ class EvaluationEngine:
     def _identify_extremes(self, df: pd.DataFrame, n: int = 10) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Identify best and worst predictions based on absolute error.
-        Fixes Critical Bug #17 (Method Missing).
+        Fixes Critical Bug #17 (Method previously missing).
         """
         if df.empty or 'abs_error' not in df.columns:
             return pd.DataFrame(), pd.DataFrame()

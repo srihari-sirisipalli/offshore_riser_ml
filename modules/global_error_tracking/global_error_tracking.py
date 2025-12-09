@@ -90,9 +90,9 @@ class GlobalErrorTrackingEngine:
 
         self.logger.info(f"Compiling {len(csv_files)} snapshots for {set_name} set...")
 
+        all_merged_series = [] # Collect all series here
         error_cols = []
         num_files = len(csv_files)
-        # FIX #92: Add progress indicator for compiling snapshots.
         log_interval = max(1, num_files // 10) # Log roughly 10 times.
 
         for i, f in enumerate(csv_files):
@@ -100,54 +100,58 @@ class GlobalErrorTrackingEngine:
                 self.logger.info(f"  ... processing snapshot {i+1}/{num_files} ({(i+1)/num_files:.0%})")
                 
             try:
-                # Filename format: trial_001_val.csv
                 trial_id = Path(f).stem.replace(f"_{set_name}", "") 
-                
-                # Load snapshot
-                # FIX #26: Specify encoding for pd.read_csv
                 snap = pd.read_csv(f, encoding='utf-8')
                 
-                # We only need the error column, renamed to the Trial ID
                 if 'row_index' in snap.columns and 'abs_error' in snap.columns:
                     snap_indexed = snap.set_index('row_index')
                     col_name = f"{trial_id}_Error"
-                    
-                    # FIX #62: Use reindex to safely merge and detect missing rows
                     merged_series = snap_indexed['abs_error'].reindex(master_df.index)
                     
                     nan_count = merged_series.isna().sum()
                     if nan_count > 0:
                         self.logger.warning(f"Snapshot {f} is missing {nan_count} rows from the base dataset for {set_name}. NaNs introduced in '{col_name}'.")
 
-                    master_df[col_name] = merged_series
+                    all_merged_series.append(merged_series.rename(col_name))
                     error_cols.append(col_name)
             except Exception as e:
                 self.logger.warning(f"Skipping corrupt snapshot {f}: {e}")
 
+        if all_merged_series:
+            errors_df = pd.concat(all_merged_series, axis=1)
+            master_df = master_df.join(errors_df, how='left')
+        
         # 3. Calculate Persistence Logic (The "Smart" Columns)
+        # FIX: Build all new columns at once to avoid DataFrame fragmentation
         if error_cols:
             threshold = 10.0 # Error threshold in degrees (adjustable)
-            
+
             # Count how many configs failed this specific row
             failures = (master_df[error_cols] > threshold).sum(axis=1)
             total_trials = len(error_cols)
-            
-            master_df['Failure_Rate_%'] = (failures / total_trials) * 100
-            
-            # The Verdict: Is this a "Persistent Failure"? (>80%)
-            master_df['Is_Persistent_Failure'] = master_df['Failure_Rate_%'] > 80.0
-            
-            # Add Min/Mean stats for deeper analysis
-            master_df['Min_Error'] = master_df[error_cols].min(axis=1)
-            master_df['Mean_Error'] = master_df[error_cols].mean(axis=1)
+
+            # Build all summary columns at once
+            summary_cols = pd.DataFrame({
+                'Failure_Rate_%': (failures / total_trials) * 100,
+                'Is_Persistent_Failure': ((failures / total_trials) * 100) > 80.0,
+                'Min_Error': master_df[error_cols].min(axis=1),
+                'Mean_Error': master_df[error_cols].mean(axis=1)
+            }, index=master_df.index)
+
+            # Concatenate all summary columns at once
+            master_df = pd.concat([master_df, summary_cols], axis=1)
         else:
-            master_df['Failure_Rate_%'] = 0.0
-            master_df['Is_Persistent_Failure'] = False
+            summary_cols = pd.DataFrame({
+                'Failure_Rate_%': 0.0,
+                'Is_Persistent_Failure': False
+            }, index=master_df.index)
+            master_df = pd.concat([master_df, summary_cols], axis=1)
 
         # 4. Final Column Ordering
         # Order: Index, Hs, Angle, FLAGS, METRICS, RAW DATA
         # Reset index to make 'row_index' a column again for final Excel output
-        master_df = master_df.reset_index()
+        # FIX: Copy to defragment before reset_index to avoid fragmentation warning
+        master_df = master_df.copy().reset_index()
 
         metadata_cols = ['row_index', 'Hs', 'True_Angle']
         flag_cols = ['Is_Persistent_Failure', 'Failure_Rate_%', 'Min_Error', 'Mean_Error']
@@ -165,13 +169,64 @@ class GlobalErrorTrackingEngine:
         except Exception as e:
             self.logger.error(f"Failed to save Excel matrix for {set_name}: {e}")
 
-    # FIX #15, #6: Remove legacy/dead code methods that are not called and do nothing.
-    # def track(self, round_predictions: List[pd.DataFrame], feature_history: List[Dict], run_id: str) -> Dict[str, Any]:
-    #     """Legacy tracking method (optional use)."""
-    #     if not self.track_config.get('enabled', True):
-    #         return {}
-    #     return {}
+    def track(self, round_predictions: List[pd.DataFrame], feature_history: List[Dict], run_id: str) -> Dict[str, Any]:
+        if not self.track_config.get('enabled', True):
+            self.logger.info("Global error tracking disabled.")
+            return {}
 
-    # def _build_evolution_matrix(self, predictions_list: List[pd.DataFrame]) -> pd.DataFrame:
-    #     # This method was also unused and served no purpose.
-    #     pass
+        self.logger.info("Starting Global Error Evolution Tracking...")
+
+        base_dir = Path(self.config['outputs'].get('base_results_dir', 'results'))
+        output_dir = base_dir / "04_GLOBAL_FAILURE_TRACKING" / run_id
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        evolution_df = self._build_evolution_matrix(round_predictions)
+        evolution_df.to_excel(output_dir / "error_evolution_matrix.xlsx", index=False)
+
+        failure_threshold = self.track_config.get('failure_threshold', 5.0)
+        error_cols = [col for col in evolution_df.columns if 'error' in col]
+        
+        persistent_mask = (evolution_df[error_cols] > failure_threshold).all(axis=1)
+        persistent_df = evolution_df[persistent_mask][['row_index']]
+        persistent_df.to_excel(output_dir / "persistent_failures.xlsx", index=False)
+
+        breakpoints = []
+        for i in range(len(error_cols) - 1):
+            prev_col = error_cols[i]
+            curr_col = error_cols[i+1]
+            
+            break_mask = (evolution_df[prev_col] <= failure_threshold) & (evolution_df[curr_col] > failure_threshold)
+            
+            if break_mask.any():
+                broken_samples = evolution_df[break_mask]
+                features_dropped = feature_history[i]['dropped']
+                
+                for _, row in broken_samples.iterrows():
+                    breakpoints.append({
+                        'row_index': row['row_index'],
+                        'breakpoint_round': i + 2,
+                        'prev_error': row[prev_col],
+                        'new_error': row[curr_col],
+                        'features_dropped_prior': ", ".join(features_dropped)
+                    })
+
+        if breakpoints:
+            breakpoint_df = pd.DataFrame(breakpoints)
+            breakpoint_df.to_excel(output_dir / "breakpoint_analysis.xlsx", index=False)
+
+        self.logger.info(f"Global tracking complete. Results in: {output_dir}")
+        return {'output_dir': str(output_dir)}
+
+    def _build_evolution_matrix(self, predictions_list: List[pd.DataFrame]) -> pd.DataFrame:
+        if not predictions_list:
+            return pd.DataFrame()
+            
+        matrix = predictions_list[0].set_index('row_index')[['abs_error']].rename(columns={'abs_error': 'round_1_error'})
+        
+        for i, df in enumerate(predictions_list[1:]):
+            round_num = i + 2
+            round_col = f"round_{round_num}_error"
+            next_round = df.set_index('row_index')[['abs_error']].rename(columns={'abs_error': round_col})
+            matrix = matrix.join(next_round, how='outer')
+            
+        return matrix.reset_index()

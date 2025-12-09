@@ -30,7 +30,7 @@ def base_config(tmp_path):
         }
     }
 
-@pytest.pytest.fixture
+@pytest.fixture
 def sample_data_df():
     """Provides a sample DataFrame for prediction."""
     n = 10

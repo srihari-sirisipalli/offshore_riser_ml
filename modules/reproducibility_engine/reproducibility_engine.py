@@ -191,8 +191,21 @@ This folder contains the complete artifacts required to reproduce, audit, or dep
 import joblib
 import pandas as pd
 import json
+from pathlib import Path
+from sklearn.base import BaseEstimator
+from utils.exceptions import ModelTrainingError
 
-model = joblib.load('final_model.pkl')
+def safe_load_model(path: Path) -> BaseEstimator:
+    \"\"\"Safely load model with validation.\"\"\"
+    try:
+        model = joblib.load(path)
+        if not isinstance(model, BaseEstimator):
+            raise ValueError("Invalid model type")
+        return model
+    except Exception as e:
+        raise ModelTrainingError(f"Failed to load model: {{e}}")
+
+model = safe_load_model(Path('final_model.pkl'))
 # X_new = ...
 # preds = model.predict(X_new)
 ```

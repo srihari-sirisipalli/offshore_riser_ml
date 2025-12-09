@@ -85,6 +85,10 @@ class ReportingEngine:
         Orchestrates the generation of multiple report files.
         Returns the path to the primary Executive Summary.
         """
+        if not self.config.get('outputs', {}).get('save_reports_pdf', True):
+            self.logger.info("PDF reporting disabled in config.")
+            return ""
+
         self.logger.info("Starting Report Generation Phase...")
         
         base_dir = self.config.get('outputs', {}).get('base_results_dir', 'results')
@@ -92,7 +96,7 @@ class ReportingEngine:
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # 1. Generate Executive Summary (High Level)
-        exec_path = output_dir / f"01_Executive_Summary_{run_id}.pdf"
+        exec_path = output_dir / f"final_report.pdf"
         self._build_executive_summary(exec_path, report_data, run_id)
         
         # 2. Generate Technical Deep Dive (Full Details)

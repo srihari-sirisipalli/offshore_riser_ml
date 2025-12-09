@@ -21,15 +21,15 @@ class ErrorAnalysisEngine:
                 predictions: pd.DataFrame, 
                 features: pd.DataFrame, 
                 split_name: str, 
-                run_id: str) -> Dict[str, Any]:
+                output_dir: Path) -> Dict[str, Any]:
         """
         Execute full error analysis suite.
         
         Parameters:
             predictions: DataFrame with 'abs_error', 'error', 'index'.
             features: DataFrame containing input features (must have matching index).
-            split_name: 'val' or 'test'.
-            run_id: Run identifier.
+            split_name: 'val' or 'test'. Used for logging.
+            output_dir: The directory to save analysis artifacts to.
         """
         if not self.ea_config.get('enabled', True):
             self.logger.info("Error Analysis disabled in config.")
@@ -37,9 +37,6 @@ class ErrorAnalysisEngine:
 
         self.logger.info(f"Starting Error Analysis for {split_name} set...")
         
-        # 1. Setup Directory
-        base_dir = self.config.get('outputs', {}).get('base_results_dir', 'results')
-        output_dir = Path(base_dir) / "10_ERROR_ANALYSIS"
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # 2. Threshold Analysis
@@ -49,10 +46,7 @@ class ErrorAnalysisEngine:
         self._detect_outliers(predictions, output_dir)
         
         # 4. Feature Correlations
-        # Merge predictions with features based on index
-        # Ensure we only analyze numeric features
         if features is not None and not features.empty:
-            # Align indices
             analysis_df = pd.concat([predictions.set_index('row_index'), features], axis=1, join='inner')
             self._analyze_correlations(analysis_df, output_dir)
         else:
@@ -66,7 +60,6 @@ class ErrorAnalysisEngine:
 
     def _analyze_thresholds(self, df: pd.DataFrame, output_dir: Path) -> None:
         """Identify samples exceeding specific error thresholds."""
-        # FIX #95: Early return if dataframe is empty.
         if df.empty:
             self.logger.warning("Empty predictions dataframe provided for threshold analysis. Skipping.")
             return
@@ -77,7 +70,7 @@ class ErrorAnalysisEngine:
         for t in thresholds:
             high_error_df = df[df['abs_error'] > t].copy()
             count = len(high_error_df)
-            pct = (count / len(df)) * 100 # len(df) is guaranteed > 0 here
+            pct = (count / len(df)) * 100
             
             summary.append({
                 'threshold': t,
@@ -86,11 +79,9 @@ class ErrorAnalysisEngine:
             })
             
             if count > 0:
-                # Save specific bad rows
                 save_path = output_dir / f"samples_error_gt_{t}deg.xlsx"
                 high_error_df.sort_values('abs_error', ascending=False).to_excel(save_path, index=False)
         
-        # Save summary
         pd.DataFrame(summary).to_excel(output_dir / "threshold_summary.xlsx", index=False)
 
     def _detect_outliers(self, df: pd.DataFrame, output_dir: Path) -> None:
@@ -99,7 +90,6 @@ class ErrorAnalysisEngine:
         errors = df['abs_error']
         
         if method == '3sigma':
-            # FIX #23: Handle zero variance in errors to prevent RuntimeWarning/error in stats.zscore.
             if errors.std() == 0:
                 self.logger.info("Absolute errors have zero variance. No outliers detected by Z-score method.")
                 return
@@ -120,43 +110,34 @@ class ErrorAnalysisEngine:
             self.logger.info(f"Detected {len(outliers)} statistical outliers using {method}.")
 
     def _analyze_correlations(self, df: pd.DataFrame, output_dir: Path) -> None:
-        """
-        Check correlation between absolute error and input features.
-        Helps identify conditions (e.g., high Hs) that lead to errors.
-        """
+        """Check correlation between absolute error and input features."""
         if not self.ea_config.get('correlation_analysis', True):
             return
 
-        # Drop non-feature columns
         ignore_cols = ['true_angle', 'pred_angle', 'error', 'row_index', 'true_sin', 'true_cos', 'pred_sin', 'pred_cos']
         target_col = 'abs_error'
         
         if target_col not in df.columns:
             return
 
-        # Select numeric columns only
         numeric_df = df.select_dtypes(include=[np.number])
+        numeric_df = numeric_df.loc[:, numeric_df.std() > 0]
         
-        # Compute correlation with abs_error
+        if target_col not in numeric_df.columns:
+            return
+
         correlations = numeric_df.corrwith(numeric_df[target_col])
-        
-        # FIX #79: Drop NaN values from correlations (e.g., if a feature is constant).
         correlations = correlations.dropna().sort_values(ascending=False)
-        
-        # Filter out self-correlation and ignored columns
         correlations = correlations.drop(labels=[target_col] + [c for c in ignore_cols if c in correlations.index], errors='ignore')
         
-        # Save results
         corr_df = correlations.reset_index()
         corr_df.columns = ['Feature', 'Correlation_with_AbsError']
         corr_df.to_excel(output_dir / "error_feature_correlations.xlsx", index=False)
 
     def _analyze_bias(self, df: pd.DataFrame, output_dir: Path) -> None:
         """Analyze systematic bias (signed error)."""
-        # Overall bias
         mean_bias = df['error'].mean()
         
-        # Bias by Angle Quadrant (0-90, 90-180, etc.)
         df['quadrant'] = pd.cut(df['true_angle'], bins=[0, 90, 180, 270, 360], 
                                 labels=['Q1', 'Q2', 'Q3', 'Q4'], include_lowest=True)
         quad_bias = df.groupby('quadrant', observed=False)['error'].agg(['mean', 'std', 'count']).reset_index()

@@ -118,17 +118,19 @@ class TestDataManager:
         with pytest.raises(DataValidationError, match="outside the allowed data directory"):
             dm.load_data()
 
-    def test_float16_overflow_warning(self, base_config, create_data_file, mock_logger):
+    def test_float16_overflow_warning(self, base_config, mock_logger, tmp_path):
         """Tests that a warning is logged when casting to float16 with out-of-range values."""
-        file_path = create_data_file("xlsx")
-        base_config["data"]["file_path"] = file_path
+        # FIX: Write the overflow data to the file so load_data reads it
+        file_path = tmp_path / "overflow_data.xlsx"
+        df_overflow = pd.DataFrame({'sin': [70000.0], 'cos': [0.0], 'hs': [1.0]})
+        df_overflow.to_excel(file_path, index=False)
+        
+        base_config["data"]["file_path"] = str(file_path)
         base_config["data"]["precision"] = "float16"
         dm = DataManager(base_config, mock_logger)
         
-        # Modify the data to have a value that will overflow float16
-        dm.data = pd.DataFrame({'sin': [70000.0], 'cos': [0.0], 'hs': [1.0]})
-        
         dm.load_data()
+        
         mock_logger.warning.assert_called_with(
             "Column 'sin' has values outside the float16 range. "
             "Casting may result in overflow/underflow. Consider using float32."
@@ -144,9 +146,9 @@ class TestDataManager:
         """Tests that an error is raised for missing required columns."""
         dm = DataManager(base_config, mock_logger)
         dm.data = sample_dataframe.drop(columns=['sin'])
-        with pytest.raises(DataValidationError, match="Missing required columns: \['sin'\]"):
+        # FIX: Use raw string (r"") for regex match containing brackets
+        with pytest.raises(DataValidationError, match=r"Missing required columns: \['sin'\]"):
             dm.validate_columns()
-
     def test_validate_columns_empty_df(self, base_config, mock_logger):
         """Tests that an error is raised when validating an empty DataFrame."""
         dm = DataManager(base_config, mock_logger)
@@ -202,13 +204,18 @@ class TestDataManager:
         base_config['splitting']['hs_bins'] = 3
         dm = DataManager(base_config, mock_logger)
         
-        # Create data where qcut will fail to create 3 bins
-        dm.data = pd.DataFrame({'sin':[0],'cos':[1],'hs':[1,1,1,10,10,10]})
+        # FIX: Ensure all arrays are same length (6)
+        dm.data = pd.DataFrame({
+            'sin': [0, 0, 0, 0, 0, 0],
+            'cos': [1, 1, 1, 1, 1, 1],
+            'hs': [1, 1, 1, 10, 10, 10]
+        })
         
         dm.compute_derived_columns()
+        # FIX: Updated expectation to 1 bin based on actual pandas behavior for this data
         mock_logger.warning.assert_called_with(
             "qcut for hs_bin was configured for 3 bins, but "
-            "only created 2 due to duplicate values in data. "
+            "only created 1 due to duplicate values in data. "
             "This may affect stratification."
         )
 

@@ -7,6 +7,8 @@ import jsonschema
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional
+from sklearn.model_selection import ParameterGrid
+from sklearn.model_selection import ParameterGrid
 
 from utils.exceptions import ConfigurationError
 
@@ -31,6 +33,7 @@ class ConfigurationManager:
         
         self._validate_schema()
         self._validate_logic()
+        self._validate_resources()
         self._propagate_seeds()
         
         return self.config
@@ -82,14 +85,62 @@ class ConfigurationManager:
             raise ConfigurationError(f"Schema validation failed: {e.message}")
 
     def _validate_logic(self) -> None:
+        """Comprehensive logical validation."""
+        # Split sizes
         test_size = self.config['splitting']['test_size']
         val_size = self.config['splitting']['val_size']
+        
+        if not (0 < test_size < 1.0):
+            raise ConfigurationError(f"test_size must be in (0, 1), got {test_size}")
+        if not (0 < val_size < 1.0):
+            raise ConfigurationError(f"val_size must be in (0, 1), got {val_size}")
         if test_size + val_size >= 1.0:
-            raise ConfigurationError(f"test_size + val_size must be < 1.0")
-            
+            raise ConfigurationError("test_size + val_size must be < 1.0")
+        
+        # Seeds must be non-negative
+        if self.config['splitting']['seed'] < 0:
+            raise ConfigurationError("seed must be non-negative")
+        
+        # HPO validation
         if self.config.get('hyperparameters', {}).get('enabled', False):
-            if not self.config['hyperparameters'].get('grids'):
-                raise ConfigurationError("Hyperparameter grids cannot be empty when HPO is enabled")
+            grids = self.config['hyperparameters'].get('grids')
+            if not grids:
+                raise ConfigurationError("Hyperparameter grids cannot be empty")
+            
+            cv_folds = self.config['hyperparameters'].get('cv_folds', 5)
+            if cv_folds < 2:
+                raise ConfigurationError(f"cv_folds must be >= 2, got {cv_folds}")
+        
+        # Bootstrap validation
+        if self.config.get('bootstrapping', {}).get('enabled', False):
+            confidence = self.config['bootstrapping'].get('confidence_level', 0.95)
+            if not (0 < confidence < 1):
+                raise ConfigurationError(f"confidence_level must be in (0, 1)")
+            
+            sample_ratio = self.config['bootstrapping'].get('sample_ratio', 1.0)
+            if sample_ratio <= 0:
+                raise ConfigurationError(f"sample_ratio must be > 0")
+        
+        # HPO Analysis validation
+        if self.config.get('hpo_analysis', {}):
+            top_percent = self.config['hpo_analysis'].get('optimal_top_percent', 10)
+            if not (0 < top_percent <= 100):
+                raise ConfigurationError(f"optimal_top_percent must be in (0, 100]")
+
+    def _validate_resources(self) -> None:
+        """Validate against resource limits."""
+        if self.config.get('hyperparameters', {}).get('enabled', False):
+            hpo_configs = sum(
+                len(list(ParameterGrid(grid)))
+                for grid in self.config.get('hyperparameters', {}).get('grids', {}).values()
+            )
+
+            max_configs = self.config.get('resources', {}).get('max_hpo_configs', 1000)
+            if hpo_configs > max_configs:
+                raise ConfigurationError(
+                    f"HPO grid would generate {hpo_configs} configs, "
+                    f"exceeding limit of {max_configs}"
+                )
 
     def _propagate_seeds(self) -> None:
         master_seed = self.config['splitting']['seed']

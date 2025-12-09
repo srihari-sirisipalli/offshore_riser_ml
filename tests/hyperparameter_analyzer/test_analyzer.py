@@ -17,8 +17,9 @@ def sample_results(tmp_path):
         'model': ['ModelA'] * 10,
         'param_n_estimators': [10, 50, 100, 10, 50, 100, 10, 50, 100, 50],
         'param_max_depth': [5, 5, 5, 10, 10, 10, None, None, None, 5],
-        'cv_mean_cmae': [10, 8, 7, 6, 5, 4, 9, 8, 7, 7.5], # Lower is better
-        'cv_mean_crmse': [12, 10, 9, 8, 7, 6, 11, 10, 9, 9.5]
+        'cv_cmae_deg_mean': [10, 8, 7, 6, 5, 4, 9, 8, 7, 7.5], # Lower is better
+        'cv_crmse_deg_mean': [12, 10, 9, 8, 7, 6, 11, 10, 9, 9.5],
+        'cv_max_error_deg_mean': [20, 18, 17, 16, 15, 14, 19, 18, 17, 17.5]
     }
     df = pd.DataFrame(data)
     
@@ -53,10 +54,10 @@ def test_optimal_range_generation(analyzer_config, mock_logger, sample_results):
     df = analyzer._preprocess_data(df)
     
     top_df = analyzer._generate_optimal_ranges_report(df)
-    
+
     # Top 10% of 10 rows = 1 row. Best is CMAE=4 (param_n=100, depth=10)
     assert len(top_df) >= 1
-    assert top_df.iloc[0]['cv_mean_cmae'] == 4
+    assert top_df.iloc[0]['cv_cmae_deg_mean'] == 4
     
     report_path = analyzer.output_dir / "optimal_parameter_ranges.xlsx"
     assert report_path.exists()
@@ -65,12 +66,14 @@ def test_plotting_logic(analyzer_config, mock_logger, sample_results):
     analyzer = HyperparameterAnalyzer(analyzer_config, mock_logger)
     analyzer.analyze("test_run")
     
-    output_dir = Path(sample_results) / "04_HYPERPARAMETER_SEARCH" / "ANALYSIS"
+    # FIX: Update path to match implementation's nested structure
+    # Implementation uses: base_results_dir / "05_HYPERPARAMETER_ANALYSIS"
+    output_dir = Path(sample_results) / "05_HYPERPARAMETER_ANALYSIS"
     
-    # Check if files generated
-    # ModelA, n_estimators vs max_depth
-    # Note: 'max_depth' contains "None" (string), so Contour should be skipped, Heatmap generated.
-    
-    # Check Heatmap
-    heatmap_file = output_dir / "ModelA_n_estimators_vs_max_depth_heatmap.png"
-    assert heatmap_file.exists()
+    # Structure: visualizations / {model} / {metric_type} / {metric} / heatmap / {style} / {p1}_vs_{p2}.png
+    # Model: ModelA
+    # Metric Type: CV (implied by columns in sample_results)
+    # Metric: cv_cmae_deg_mean (primary)
+    # Style: box (default first style)
+    # Params: n_estimators vs max_depth
+    heatmap_file = output_dir / "visualizations" / "ModelA" / "CV" / "cv_cmae_deg_mean" / "heatmap" / "box" / "n_estimators_vs_max_depth.png"

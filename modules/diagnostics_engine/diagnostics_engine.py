@@ -8,6 +8,7 @@ from pathlib import Path
 from scipy import stats
 from typing import Optional
 from contextlib import contextmanager # Added for FIX #78
+import warnings  # Added
 
 class DiagnosticsEngine:
     """
@@ -35,28 +36,35 @@ class DiagnosticsEngine:
         # Save current rcParams and seaborn theme
         original_rcParams = plt.rcParams.copy()
         original_seaborn_theme = sns.axes_style() # Captures current seaborn style
+        figs = [] # Track figures created in this context
         try:
             # Apply engine's specific settings
             sns.set_theme(style="whitegrid")
             plt.rcParams.update({'figure.max_open_warning': 0})
-            yield
+            yield figs
         finally:
             # Restore original rcParams and seaborn theme
             plt.rcParams.update(original_rcParams)
             sns.set_theme(style=original_seaborn_theme) # Restore seaborn theme
-            plt.close('all') # Close all figures created within this context
+            # Close only figures created in this context
+            for fig in figs:
+                plt.close(fig)
 
     def generate_all(self, predictions: pd.DataFrame, split_name: str, run_id: str) -> None:
         """
         Orchestrate generation of all configured plots.
         """
+        if predictions.empty:
+            self.logger.warning("Predictions dataframe is empty. Skipping diagnostics generation.")
+            return
+            
         self.logger.info(f"Generating diagnostics for {split_name} set...")
         
         # FIX #78: Wrap all plotting logic in the context manager.
-        with self._plot_context():
+        with self._plot_context() as figs:
             # 1. Setup Directories
             base_dir = self.config.get('outputs', {}).get('base_results_dir', 'results')
-            root_dir = Path(base_dir) / "09_DIAGNOSTICS"
+            root_dir = Path(base_dir) / "08_DIAGNOSTICS"
             
             dirs = {
                 'index': root_dir / "index_plots",
@@ -72,37 +80,38 @@ class DiagnosticsEngine:
                 
             # 2. Generate Plots based on flags
             if self.diag_config.get('generate_index_plots', True):
-                self._plot_index_vs_values(predictions, split_name, dirs['index'])
+                self._plot_index_vs_values(predictions, split_name, dirs['index'], figs)
                 
             if self.diag_config.get('generate_scatter_plots', True):
-                self._plot_scatter(predictions, split_name, dirs['scatter'])
+                self._plot_scatter(predictions, split_name, dirs['scatter'], figs)
                 
             if self.diag_config.get('generate_residual_plots', True):
-                self._plot_residuals(predictions, split_name, dirs['residual'])
+                self._plot_residuals(predictions, split_name, dirs['residual'], figs)
                 
             if self.diag_config.get('generate_distribution_plots', True):
-                self._plot_distributions(predictions, split_name, dirs['dist'])
+                self._plot_distributions(predictions, split_name, dirs['dist'], figs)
                 
             if self.diag_config.get('generate_qq_plots', True):
-                self._plot_qq(predictions, split_name, dirs['qq'])
+                self._plot_qq(predictions, split_name, dirs['qq'], figs)
                 
             if self.diag_config.get('generate_per_hs_accuracy', True):
-                self._plot_per_hs_analysis(predictions, split_name, dirs['per_hs'])
+                self._plot_per_hs_analysis(predictions, split_name, dirs['per_hs'], figs)
                 
             self.logger.info(f"Diagnostics generation complete for {split_name}.")
 
-    def _save_fig(self, output_dir: Path, filename: str):
+    def _save_fig(self, output_dir: Path, filename: str, fig, figs: list):
         """Helper to save and close figures."""
         path = output_dir / f"{filename}.{self.fmt}"
-        plt.savefig(path, dpi=self.dpi, bbox_inches='tight')
-        plt.close()
+        fig.savefig(path, dpi=self.dpi, bbox_inches='tight')
+        figs.append(fig)
 
-    def _plot_index_vs_values(self, df: pd.DataFrame, split: str, output_dir: Path):
+    def _plot_index_vs_values(self, df: pd.DataFrame, split: str, output_dir: Path, figs: list):
         """
         Plot Actual/Predicted/Error vs Index using SCATTER plots.
         """
+        plt.switch_backend('Agg')
         # 1. Index vs Actual & Predicted (Scatter)
-        plt.figure(figsize=(12, 6))
+        fig = plt.figure(figsize=(12, 6))
         # Actuals as small blue dots
         plt.scatter(df.index, df['true_angle'], label='True', alpha=0.5, s=15, color='blue', marker='o')
         # Preds as small red crosses
@@ -112,26 +121,27 @@ class DiagnosticsEngine:
         plt.xlabel('Sample Index')
         plt.ylabel('Angle (deg)')
         plt.legend()
-        self._save_fig(output_dir, f"index_vs_values_{split}")
+        self._save_fig(output_dir, f"index_vs_values_{split}", fig, figs)
         
         # 2. Index vs Error (Scatter)
-        plt.figure(figsize=(12, 4))
+        fig = plt.figure(figsize=(12, 4))
         plt.scatter(df.index, df['error'], color='purple', alpha=0.6, s=10)
         plt.axhline(0, color='black', linestyle='--', linewidth=1)
         plt.title(f'{split.upper()}: Index vs Error')
         plt.ylabel('Error (deg)')
-        self._save_fig(output_dir, f"index_vs_error_{split}")
+        self._save_fig(output_dir, f"index_vs_error_{split}", fig, figs)
         
         # 3. Index vs Abs Error (Scatter)
-        plt.figure(figsize=(12, 4))
+        fig = plt.figure(figsize=(12, 4))
         plt.scatter(df.index, df['abs_error'], color='darkorange', alpha=0.6, s=10)
         plt.title(f'{split.upper()}: Index vs Absolute Error')
         plt.ylabel('Abs Error (deg)')
-        self._save_fig(output_dir, f"index_vs_abs_error_{split}")
+        self._save_fig(output_dir, f"index_vs_abs_error_{split}", fig, figs)
 
-    def _plot_scatter(self, df: pd.DataFrame, split: str, output_dir: Path):
+    def _plot_scatter(self, df: pd.DataFrame, split: str, output_dir: Path, figs: list):
         """Scatter plot: Actual vs Predicted."""
-        plt.figure(figsize=(8, 8))
+        plt.switch_backend('Agg')
+        fig = plt.figure(figsize=(8, 8))
         
         # Color points by absolute error
         sc = plt.scatter(df['true_angle'], df['pred_angle'], 
@@ -151,43 +161,51 @@ class DiagnosticsEngine:
         plt.xlabel('True Angle (deg)')
         plt.ylabel('Predicted Angle (deg)')
         plt.legend()
-        self._save_fig(output_dir, f"actual_vs_pred_{split}")
+        self._save_fig(output_dir, f"actual_vs_pred_{split}", fig, figs)
 
-    def _plot_residuals(self, df: pd.DataFrame, split: str, output_dir: Path):
+    def _plot_residuals(self, df: pd.DataFrame, split: str, output_dir: Path, figs: list):
         """Residuals vs Predicted Value."""
-        plt.figure(figsize=(10, 6))
+        plt.switch_backend('Agg')
+        fig = plt.figure(figsize=(10, 6))
         plt.scatter(df['pred_angle'], df['error'], alpha=0.5, s=15)
         plt.axhline(0, color='r', linestyle='--')
         plt.title(f'{split.upper()}: Residuals vs Predicted')
         plt.xlabel('Predicted Angle (deg)')
         plt.ylabel('Residual (Error) (deg)')
-        self._save_fig(output_dir, f"residuals_vs_pred_{split}")
+        self._save_fig(output_dir, f"residuals_vs_pred_{split}", fig, figs)
 
-    def _plot_distributions(self, df: pd.DataFrame, split: str, output_dir: Path):
+    def _plot_distributions(self, df: pd.DataFrame, split: str, output_dir: Path, figs: list):
         """Error Histogram and Boxplot."""
+        plt.switch_backend('Agg')
         # Histogram
-        plt.figure(figsize=(10, 6))
+        fig = plt.figure(figsize=(10, 6))
         sns.histplot(df['error'], kde=True, bins=50, color='teal')
         plt.title(f'{split.upper()}: Error Distribution')
         plt.xlabel('Error (deg)')
-        self._save_fig(output_dir, f"error_hist_{split}")
+        self._save_fig(output_dir, f"error_hist_{split}", fig, figs)
         
         # Boxplot (Abs Error)
-        plt.figure(figsize=(6, 6))
-        sns.boxplot(y=df['abs_error'], color='orange')
+        fig = plt.figure(figsize=(6, 6))
+        # FIX: Suppress upstream PendingDeprecationWarning regarding 'vert'
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=PendingDeprecationWarning)
+            sns.boxplot(y=df['abs_error'], color='orange')
+            
         plt.title(f'{split.upper()}: Absolute Error Boxplot')
         plt.ylabel('Absolute Error (deg)')
-        self._save_fig(output_dir, f"error_boxplot_{split}")
+        self._save_fig(output_dir, f"error_boxplot_{split}", fig, figs)
 
-    def _plot_qq(self, df: pd.DataFrame, split: str, output_dir: Path):
+    def _plot_qq(self, df: pd.DataFrame, split: str, output_dir: Path, figs: list):
         """Q-Q Plot to check normality of residuals."""
-        plt.figure(figsize=(8, 8))
+        plt.switch_backend('Agg')
+        fig = plt.figure(figsize=(8, 8))
         stats.probplot(df['error'], dist="norm", plot=plt)
         plt.title(f'{split.upper()}: Q-Q Plot')
-        self._save_fig(output_dir, f"qq_plot_{split}")
+        self._save_fig(output_dir, f"qq_plot_{split}", fig, figs)
 
-    def _plot_per_hs_analysis(self, df: pd.DataFrame, split: str, output_dir: Path):
+    def _plot_per_hs_analysis(self, df: pd.DataFrame, split: str, output_dir: Path, figs: list):
         """Plot Error vs Significant Wave Height (Hs)."""
+        plt.switch_backend('Agg')
         hs_col = self.config['data']['hs_column']
         
         if hs_col not in df.columns:
@@ -195,29 +213,34 @@ class DiagnosticsEngine:
             return
 
         # Scatter: Abs Error vs Hs
-        plt.figure(figsize=(10, 6))
+        fig = plt.figure(figsize=(10, 6))
         sns.scatterplot(data=df, x=hs_col, y='abs_error', alpha=0.5, s=20)
         plt.title(f'{split.upper()}: Absolute Error vs Hs')
         plt.xlabel('Significant Wave Height (m)')
         plt.ylabel('Abs Error (deg)')
-        self._save_fig(output_dir, f"error_vs_hs_scatter_{split}")
+        self._save_fig(output_dir, f"error_vs_hs_scatter_{split}", fig, figs)
         
         # Boxplot by Hs Bin (if available)
         if 'hs_bin' in df.columns:
             # Ensure bins are proper categorical labels
             df['hs_bin'] = df['hs_bin'].astype(str)
 
-            plt.figure(figsize=(12, 6))
+            fig = plt.figure(figsize=(12, 6))
 
-            # FIXED: Removed deprecated hue parameter that was causing warnings
-            sns.boxplot(
-                data=df,
-                x='hs_bin',
-                y='abs_error',
-                palette="Blues"
-            )
+            # FIX: Suppress upstream warnings and fix FutureWarnings
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=PendingDeprecationWarning)
+                # FIX: Added hue and legend=False to satisfy new Seaborn API
+                sns.boxplot(
+                    data=df,
+                    x='hs_bin',
+                    y='abs_error',
+                    hue='hs_bin', 
+                    palette="Blues",
+                    legend=False
+                )
 
             plt.title(f'{split.upper()}: Error Distribution by Hs Bin')
             plt.xlabel('Hs Bin')
             plt.ylabel('Abs Error (deg)')
-            self._save_fig(output_dir, f"error_vs_hs_bin_{split}")
+            self._save_fig(output_dir, f"error_vs_hs_bin_{split}", fig, figs)

@@ -83,7 +83,8 @@ def test_evaluation_workflow(eval_config, mock_logger, sample_predictions):
     
     # Check artifacts
     base = Path(eval_config['outputs']['base_results_dir'])
-    eval_dir = base / "07_EVALUATION"
+    # FIX: Corrected directory name to match implementation
+    eval_dir = base / "08_EVALUATION"
     
     assert (eval_dir / "metrics_test_split.xlsx").exists()
     assert (eval_dir / "best_10_samples_test_split.xlsx").exists()

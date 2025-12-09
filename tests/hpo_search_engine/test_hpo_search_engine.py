@@ -119,14 +119,23 @@ class TestHPOSearchEngine:
     @patch('modules.hpo_search_engine.ModelFactory.create')
     def test_hpo_handles_failed_trial(self, mock_create, hpo_config, sample_dfs, mock_logger):
         """Tests that HPO continues and logs an error if one trial fails."""
-        # Make the first model creation fail, but the second succeed
-        mock_create.side_effect = [Exception("Model fit failed"), MagicMock()]
+        # FIX: Create a mock model that behaves correctly for the successful trial
+        good_model = MagicMock()
         
+        # FIX: Configure predict to return array matching input length (2 columns for sin/cos)
+        good_model.predict.side_effect = lambda X: np.zeros((len(X), 2))
+
+        # Make the first model creation fail, but ALL subsequent ones succeed.
+        # Config 1: 1 call (Fail)
+        # Config 2: CV folds (2 calls) + Final Train (1 call) = 3 calls
+        # We multiply the list to ensure we never run out of mocks
+        mock_create.side_effect = [Exception("Model fit failed")] + [good_model] * 10
+
         train_df, val_df, test_df = sample_dfs
         engine = HPOSearchEngine(hpo_config, mock_logger)
         engine.execute(train_df, val_df, test_df, "test_run")
-        
-        # Check that an error was logged
+
+        # Check that an error was logged ONLY ONCE (for the first failure)
         mock_logger.error.assert_called_once()
         
         # Check that the progress file still contains entries for all trials
@@ -137,7 +146,6 @@ class TestHPOSearchEngine:
             assert '"status": "failed"' in lines[0]
             # Second trial should be 'success'
             assert '"status": "success"' in lines[1]
-            
     def test_finalize_results_tie_breaking(self, hpo_config, sample_dfs, mock_logger):
         """Tests that the best model is chosen correctly, applying tie-breaking."""
         train_df, val_df, test_df = sample_dfs

@@ -47,7 +47,7 @@ class EnsemblingEngine:
         
         # 1. Setup Output Directory
         base_dir = self.config.get('outputs', {}).get('base_results_dir', 'results')
-        output_dir = Path(base_dir) / "11_ADVANCED_ANALYTICS" / "ensembling"
+        output_dir = Path(base_dir) / "09_ADVANCED_ANALYTICS" / "ensembling"
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # 2. Validate Inputs
@@ -93,7 +93,7 @@ class EnsemblingEngine:
         base_idx = predictions_list[0].index
         for i, df in enumerate(predictions_list[1:]):
             if len(df) != len(base_idx):
-                raise ValueError(f"Model {i+1} (index: {df.index.name if df.index.name else 'Unnamed'}) has length {len(df)}, expected {len(base_idx)}. Lengths must match.")
+                raise ValueError(f"DataFrames have different lengths. Base has {len(base_idx)}, model {i+1} has {len(df)}.")
             # FIX #56: Check for actual index values, not just length.
             if not df.index.equals(base_idx):
                 raise ValueError(f"Model {i+1} (index: {df.index.name if df.index.name else 'Unnamed'}) indices do not match the base model indices. Indices must be identical for ensembling. Mismatch found at index position {i}.")

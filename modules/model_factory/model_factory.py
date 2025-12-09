@@ -42,7 +42,6 @@ class ModelFactory:
         'DecisionTreeRegressor': DecisionTreeRegressor,
         
         # Nearest Neighbors
-        'KNeighborsRegressor': KNeighborsRegressor,
         'RadiusNeighborsRegressor': RadiusNeighborsRegressor,
         
         # Neural Networks (Very powerful for multi-target)
@@ -59,6 +58,7 @@ class ModelFactory:
     # Models that DO NOT support multi-output natively and MUST be wrapped
     # (These fit TWO separate models: Model_Sin and Model_Cos)
     WRAPPED_MODELS = {
+        'KNeighborsRegressor': KNeighborsRegressor,
         # Boosting
         'GradientBoostingRegressor': GradientBoostingRegressor,
         'HistGradientBoostingRegressor': HistGradientBoostingRegressor,

@@ -1,0 +1,85 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Offshore Riser Angle Prediction System Configuration",
+  "type": "object",
+  "required": ["data", "splitting", "models"],
+  "properties": {
+    "data": {
+      "type": "object",
+      "required": ["file_path", "target_sin", "target_cos", "hs_column"],
+      "properties": {
+        "file_path": { "type": "string" },
+        "target_sin": { "type": "string" },
+        "target_cos": { "type": "string" },
+        "hs_column": { "type": "string" },
+        "include_hs_in_features": { "type": "boolean", "default": true },
+        "drop_columns": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "precision": { "type": "string", "enum": ["float16", "float32", "float64"], "default": "float32" },
+        "validate_sin_cos_circle": { "type": "boolean", "default": true },
+        "circle_tolerance": { "type": "number", "default": 0.01 }
+      }
+    },
+    "splitting": {
+      "type": "object",
+      "required": ["angle_bins", "hs_bins", "test_size", "val_size", "seed"],
+      "properties": {
+        "angle_bins": { "type": "integer", "minimum": 1, "maximum": 360 },
+        "hs_bins": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "test_size": { "type": "number", "minimum": 0.0, "maximum": 0.5 },
+        "val_size": { "type": "number", "minimum": 0.0, "maximum": 0.5 },
+        "seed": { "type": "integer" },
+        "shuffle": { "type": "boolean", "default": true },
+        "drop_incomplete_bins": { "type": "boolean", "default": false },
+        "hs_binning_method": { "type": "string", "enum": ["quantile", "equal_width"], "default": "quantile" }
+      }
+    },
+    "models": {
+      "type": "object",
+      "properties": {
+        "native": { "type": "array", "items": { "type": "string" }, "default": ["ExtraTreesRegressor"] },
+        "wrapped": { "type": "array", "items": { "type": "string" }, "default": ["KNeighborsRegressor"] }
+      }
+    },
+    "hyperparameters": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "cv_strategy": { "type": "string", "enum": ["kfold_on_train", "simple_train_val"], "default": "kfold_on_train" },
+        "cv_folds": { "type": "integer", "minimum": 2, "default": 5 },
+        "grids": { "type": "object" }
+      }
+    },
+    "iterative": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "max_rounds": { "type": "integer", "default": 20 },
+        "min_features": { "type": "integer", "minimum": 1, "default": 5 }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "properties": {
+        "n_jobs": { "type": "integer", "default": -1 },
+        "deterministic": { "type": "boolean", "default": true }
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "properties": {
+        "base_results_dir": { "type": "string", "default": "results" },
+        "save_predictions": { "type": "boolean", "default": true },
+        "save_models": { "type": "boolean", "default": true }
+      }
+    },
+    "logging": {
+      "type": "object",
+      "properties": {
+        "level": { "type": "string", "enum": ["DEBUG", "INFO", "WARNING", "ERROR"], "default": "INFO" },
+        "log_to_file": { "type": "boolean", "default": true },
+        "log_to_console": { "type": "boolean", "default": true },
+        "colorful_console": { "type": "boolean", "default": true }
+      }
+    }
+  }
+}

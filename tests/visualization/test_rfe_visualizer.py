@@ -54,7 +54,7 @@ class TestRFEVisualizer:
         plot_dir = round_dir / "04_FEATURE_EVALUATION" / "feature_evaluation_plots"
         assert plot_dir.exists()
         assert (plot_dir / "lofo_comparison_bar.png").exists()
-        assert (plot_dir / "lofo_error_heatmap.png").exists()
+        assert (plot_dir / "lofo_val_metrics_heatmap.png").exists()
 
     def test_visualize_comparison(self, viz_config, mock_logger, sample_preds, tmp_path):
         """Checks creation of comparison overlay plots."""

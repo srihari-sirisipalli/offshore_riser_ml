@@ -69,8 +69,25 @@ class TestRFEController:
         controller = RFEController(rfe_config, mock_logger)
 
         # Mock sub-methods to avoid complex logic dependencies
-        controller._execute_grid_search_phase = MagicMock(return_value={'n': 100})
-        controller._train_baseline_phase = MagicMock(return_value={'cmae': 1.0})
+        controller._execute_grid_search_phase = MagicMock(return_value={'model': 'LinearRegression', 'params': {}})
+        # _train_baseline_phase returns (metrics_dict, predictions_df)
+        # Create complete mock predictions with all required columns
+        mock_predictions = pd.DataFrame({
+            'row_index': [0, 1, 2],
+            'true_sin': [0.1, 0.2, 0.3],
+            'true_cos': [0.9, 0.8, 0.7],
+            'pred_sin': [0.11, 0.21, 0.31],
+            'pred_cos': [0.89, 0.79, 0.69],
+            'true_angle': [6.3, 14.0, 23.2],
+            'pred_angle': [7.1, 14.7, 24.0],
+            'error': [0.8, 0.7, 0.8],
+            'abs_error': [0.8, 0.7, 0.8]
+        })
+        controller._train_baseline_phase = MagicMock(return_value=({'cmae': 1.0}, mock_predictions))
+        # Mock internal training to avoid ModelFactory calls
+        mock_model = MagicMock()
+        controller._train_model_internal = MagicMock(return_value=mock_model)
+        controller._make_predictions = MagicMock(return_value=mock_predictions)
         
         # Scenario: Start with 5 features. Min is 2.
         # R0 (5 feats) -> drops f1. Rem: 4. Stop? No.
@@ -78,9 +95,11 @@ class TestRFEController:
         # R2 (3 feats) -> drops f3. Rem: 2. Stop? YES (because 3-1 = 2 <= min).
         
         controller._execute_lofo_phase = MagicMock(side_effect=[
-            [{'feature': 'f1', 'val_cmae': 0.1}, {'feature': 'f2', 'val_cmae': 0.2}], # Round 0
-            [{'feature': 'f2', 'val_cmae': 0.1}, {'feature': 'f3', 'val_cmae': 0.2}], # Round 1
-            [{'feature': 'f3', 'val_cmae': 0.1}], # Round 2
+            [{'feature': 'f1', 'val_cmae': 0.1, 'delta_cmae': 0.05, 'metrics': {}, 'val_predictions': mock_predictions},
+             {'feature': 'f2', 'val_cmae': 0.2, 'delta_cmae': 0.10, 'metrics': {}, 'val_predictions': mock_predictions}], # Round 0
+            [{'feature': 'f2', 'val_cmae': 0.1, 'delta_cmae': 0.05, 'metrics': {}, 'val_predictions': mock_predictions},
+             {'feature': 'f3', 'val_cmae': 0.2, 'delta_cmae': 0.10, 'metrics': {}, 'val_predictions': mock_predictions}], # Round 1
+            [{'feature': 'f3', 'val_cmae': 0.1, 'delta_cmae': 0.05, 'metrics': {}, 'val_predictions': mock_predictions}], # Round 2
         ])
         
         # Execute
@@ -128,9 +147,28 @@ class TestRFEController:
         # Mock internal methods to prevent real processing AND IO errors
         controller._setup_round_directory = MagicMock()
         controller._save_round_datasets = MagicMock()
-        controller._execute_grid_search_phase = MagicMock(return_value={})
-        controller._train_baseline_phase = MagicMock(return_value={})
-        controller._execute_lofo_phase = MagicMock(return_value=[{'feature':'f1', 'val_cmae': 0}])
+        controller._execute_grid_search_phase = MagicMock(return_value={'model': 'LinearRegression', 'params': {}})
+        # _train_baseline_phase returns (metrics_dict, predictions_df)
+        # Create complete mock predictions with all required columns
+        mock_predictions = pd.DataFrame({
+            'row_index': [0, 1, 2],
+            'true_sin': [0.1, 0.2, 0.3],
+            'true_cos': [0.9, 0.8, 0.7],
+            'pred_sin': [0.11, 0.21, 0.31],
+            'pred_cos': [0.89, 0.79, 0.69],
+            'true_angle': [6.3, 14.0, 23.2],
+            'pred_angle': [7.1, 14.7, 24.0],
+            'error': [0.8, 0.7, 0.8],
+            'abs_error': [0.8, 0.7, 0.8]
+        })
+        controller._train_baseline_phase = MagicMock(return_value=({'val_cmae': 1.0}, mock_predictions))
+        controller._execute_lofo_phase = MagicMock(return_value=[
+            {'feature':'f1', 'val_cmae': 0.9, 'delta_cmae': -0.1, 'metrics': {'val_cmae': 0.9}, 'val_predictions': mock_predictions}
+        ])
+        # Mock training and prediction methods
+        mock_model = MagicMock()
+        controller._train_model_internal = MagicMock(return_value=mock_model)
+        controller._make_predictions = MagicMock(return_value=mock_predictions)
         
         # FIX: Mock _finalize_round so it doesn't try to write to non-existent folders 
         # (since _setup_round_directory is mocked out)

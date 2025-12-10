@@ -55,8 +55,8 @@ class TestEvolutionTracker:
         
         df = pd.read_excel(file_path)
         assert len(df) == 2
-        assert df.iloc[0]['cmae'] == 2.0
-        assert df.iloc[1]['cmae'] == 1.8
+        assert df.iloc[0]['val_cmae'] == 2.0
+        assert df.iloc[1]['val_cmae'] == 1.8
         assert df.iloc[1]['feature_removed'] == 'f2'
 
     def test_resume_handling_no_duplicates(self, track_config, mock_logger):
@@ -80,15 +80,15 @@ class TestEvolutionTracker:
         """Verifies that plots are generated after 2+ rounds."""
         tracker = EvolutionTracker(track_config, mock_logger)
         
-        # FIX: Include all metrics required for plotting (cmae AND accuracy_at_5deg)
+        # FIX: Include all metrics required for plotting (val_cmae AND val_accuracy_at_5deg)
         r0 = {
             'round': 0, 'n_features': 10, 
-            'metrics': {'cmae': 1.0, 'accuracy_at_5deg': 80.0}, 
+            'metrics': {'val_cmae': 1.0, 'val_accuracy_at_5deg': 80.0}, 
             'hyperparameters': {}
         }
         r1 = {
             'round': 1, 'n_features': 9, 
-            'metrics': {'cmae': 0.9, 'accuracy_at_5deg': 85.0}, 
+            'metrics': {'val_cmae': 0.9, 'val_accuracy_at_5deg': 85.0}, 
             'hyperparameters': {}
         }
         
@@ -97,7 +97,6 @@ class TestEvolutionTracker:
         
         plot_dir = tracker.tracking_dir / "04_evolution_plots"
         
-        assert (plot_dir / "cmae_evolution.png").exists()
-        # This will now exist because we provided the data
-        assert (plot_dir / "accuracy5_evolution.png").exists() 
-        assert (plot_dir / "feature_count_vs_error.png").exists()
+        assert (plot_dir / "val_cmae_evolution.png").exists()
+        assert (plot_dir / "val_acc5_evolution.png").exists()
+        assert (plot_dir / "feature_count_vs_val_cmae.png").exists()

@@ -53,22 +53,24 @@ def test_optimal_range_generation(analyzer_config, mock_logger, sample_results):
     df = pd.read_excel(Path(sample_results) / "04_HYPERPARAMETER_SEARCH" / "all_config_results.xlsx")
     df = analyzer._preprocess_data(df)
     
-    top_df = analyzer._generate_optimal_ranges_report(df)
+    analyzer._generate_optimal_ranges_report_multisheet(df)
 
+    top_df = analyzer._get_top_configs(df, analyzer.optimal_top_percent)
     # Top 10% of 10 rows = 1 row. Best is CMAE=4 (param_n=100, depth=10)
     assert len(top_df) >= 1
     assert top_df.iloc[0]['cv_cmae_deg_mean'] == 4
     
-    report_path = analyzer.output_dir / "optimal_parameter_ranges.xlsx"
+    report_path = analyzer.output_dir / "optimal_ranges.xlsx"
     assert report_path.exists()
 
 def test_plotting_logic(analyzer_config, mock_logger, sample_results):
     analyzer = HyperparameterAnalyzer(analyzer_config, mock_logger)
-    analyzer.analyze("test_run")
     
-    # FIX: Update path to match implementation's nested structure
-    # Implementation uses: base_results_dir / "05_HYPERPARAMETER_ANALYSIS"
-    output_dir = Path(sample_results) / "05_HYPERPARAMETER_ANALYSIS"
+    hpo_results_file = Path(sample_results) / "04_HYPERPARAMETER_SEARCH" / "all_config_results.xlsx"
+    analysis_output_dir = Path(sample_results) / "05_HYPERPARAMETER_ANALYSIS"
+    analyzer.analyze(hpo_results_file, analysis_output_dir)
+    
+    output_dir = analysis_output_dir
     
     # Structure: visualizations / {model} / {metric_type} / {metric} / heatmap / {style} / {p1}_vs_{p2}.png
     # Model: ModelA
@@ -77,3 +79,4 @@ def test_plotting_logic(analyzer_config, mock_logger, sample_results):
     # Style: box (default first style)
     # Params: n_estimators vs max_depth
     heatmap_file = output_dir / "visualizations" / "ModelA" / "CV" / "cv_cmae_deg_mean" / "heatmap" / "box" / "n_estimators_vs_max_depth.png"
+    assert heatmap_file.exists()

@@ -36,7 +36,11 @@ class ErrorAnalysisEngine:
             return {}
 
         self.logger.info(f"Starting Error Analysis for {split_name} set...")
-        
+
+        # Ensure output_dir is a Path object
+        if not isinstance(output_dir, Path):
+            output_dir = Path(output_dir)
+
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # 2. Threshold Analysis

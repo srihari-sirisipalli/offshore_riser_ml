@@ -463,6 +463,18 @@ class HPOSearchEngine(BaseEngine):
             'accuracy_at_5deg': np.mean(angle_error <= 5.0) * 100
         }
 
+    @staticmethod
+    def _serialize_params(params: Any) -> str:
+        """
+        Serialize parameter dictionaries/lists to JSON strings for Parquet compatibility.
+        """
+        if isinstance(params, (dict, list)):
+            try:
+                return json.dumps(params, sort_keys=True)
+            except TypeError:
+                return str(params)
+        return str(params)
+
     def _load_progress(self):
         """Load completed hashes using a generator to avoid memory spikes."""
         if self.progress_file.exists():
@@ -530,6 +542,11 @@ class HPOSearchEngine(BaseEngine):
 
             with pd.read_json(self.progress_file, lines=True, chunksize=chunk_size) as reader:
                 for chunk in reader:
+                    # Ensure complex objects (e.g., dict/list params) are serializable for Parquet
+                    if 'params' in chunk.columns:
+                        chunk = chunk.copy()
+                        chunk['params'] = chunk['params'].apply(self._serialize_params)
+
                     total_rows += len(chunk)
                     table = pa.Table.from_pandas(chunk)
 

@@ -987,7 +987,7 @@ class AdvancedVisualizer:
         bin_edges = np.linspace(df[hs_col].min(), df[hs_col].max(), 7)
         df["hs_bin"] = pd.cut(df[hs_col], bins=bin_edges, include_lowest=True)
         plt.figure(figsize=(12, 6))
-        sns.violinplot(data=df, x="hs_bin", y="abs_error", inner="box", palette="viridis")
+        sns.violinplot(data=df, x="hs_bin", y="abs_error", inner="box")
         plt.xticks(rotation=30, ha="right")
         plt.title("Abs Error Distribution by Hs Bin")
         plt.xlabel("Hs bin")
@@ -1013,11 +1013,20 @@ class AdvancedVisualizer:
         ang = df["true_angle"].values
         err = df["abs_error"].values
 
+        # Require sufficient variation to build a meaningful grid
+        if len(np.unique(hs)) < 3 or len(np.unique(ang)) < 3:
+            self.logger.warning("Performance contour map skipped: insufficient unique points for interpolation.")
+            return
+
         grid_hs, grid_angle = np.mgrid[
             hs.min():hs.max():100j,
             0:360:100j,
         ]
         grid_error = griddata((hs, ang), err, (grid_hs, grid_angle), method="linear")
+
+        if grid_error is None or np.all(np.isnan(grid_error)):
+            self.logger.warning("Performance contour map skipped: interpolation produced all-NaN grid.")
+            return
 
         plt.figure(figsize=(12, 8))
         cs = plt.contourf(grid_hs, grid_angle, grid_error, levels=20, cmap="magma")

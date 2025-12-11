@@ -105,6 +105,11 @@ class RFEController:
 
                 self._load_round_state(round_dir)
                 self.current_round += 1
+
+                # Respect max_rounds even when resuming from completed rounds
+                if self.current_round >= self.max_rounds:
+                    self.logger.info(f"Maximum rounds reached ({self.max_rounds}). RFE Pipeline Completed Successfully (Resumed).")
+                    return
                 continue
 
             self.logger.info(f"\n{'='*60}")

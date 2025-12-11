@@ -125,7 +125,7 @@ class RFEController:
             self.best_params_history.append(best_config)
 
             # Phase 3: Baseline Training and Evaluation
-            baseline_metrics, baseline_val_preds, baseline_test_preds = self._train_baseline_phase(round_dir, best_config, train_df, val_df, test_df)
+            baseline_metrics, baseline_val_preds, baseline_test_preds, baseline_model = self._train_baseline_phase(round_dir, best_config, train_df, val_df, test_df)
             self._run_significance_analysis(round_dir, baseline_val_preds, baseline_test_preds)
             self._summarize_safety(round_dir, baseline_val_preds, baseline_test_preds)
             # CV consistency / overfitting gap persistence (train vs val metrics if available)
@@ -155,7 +155,7 @@ class RFEController:
             comparison_summary = {}
             if dropped_model_info:
                 self.logger.info("  >> Phase 5: Error Analysis on Dropped Feature Model...")
-                # Run error analysis on the dropped feature model's predictions
+                # Run error analysis on the dropped feature model's predictions (both val and test)
                 dropped_error_dir = round_dir / constants.ROUND_DROPPED_FEATURE_RESULTS_DIR / "error_analysis"
                 filtered_test = self._filter_to_specific_features(test_df, [f for f in self.active_features if f != feature_to_drop])
 
@@ -171,6 +171,13 @@ class RFEController:
                 temp_ea_config['outputs'] = self.config['outputs'].copy()
                 temp_ea_config['outputs']['base_results_dir'] = str(round_dir / constants.ROUND_DROPPED_FEATURE_RESULTS_DIR)
                 temp_error_analyzer = ErrorAnalysisEngine(temp_ea_config, self.logger)
+                # Val Error Analysis
+                temp_error_analyzer.execute(
+                    predictions=dropped_model_info['val_predictions'],
+                    features=self._filter_to_specific_features(val_df, [f for f in self.active_features if f != feature_to_drop]),
+                    split_name="val"
+                )
+                # Test Error Analysis
                 temp_error_analyzer.execute(
                     predictions=dropped_test_preds,
                     features=filtered_test,
@@ -194,6 +201,34 @@ class RFEController:
                 temp_dropped_diag = DiagnosticsEngine(dropped_diag_config, self.logger)
                 temp_dropped_diag.execute(dropped_model_info['val_predictions'], "val_dropped", "dropped")
                 temp_dropped_diag.execute(dropped_test_preds, "test_dropped", "dropped")
+
+                # Advanced visuals for dropped model (if enabled)
+                if self.run_advanced_suite:
+                    try:
+                        from modules.visualization.advanced_viz import AdvancedVisualizer
+                        adv_viz = AdvancedVisualizer(self.config, self.logger)
+                        adv_output_dropped = dropped_preds_dir / constants.ROUND_ADVANCED_VISUALIZATIONS_DIR
+                        # Val advanced viz
+                        adv_viz.run_default_suite(dropped_model_info['val_predictions'], adv_output_dropped, split_name="val_dropped")
+                        # Test advanced viz
+                        adv_viz.run_default_suite(dropped_test_preds, adv_output_dropped, split_name="test_dropped")
+                    except Exception as exc:  # noqa: BLE001
+                        self.logger.warning(f"Advanced visualizations for dropped model skipped: {exc}")
+
+                # Interactive dashboard for dropped model (if enabled)
+                if self.run_dashboard:
+                    try:
+                        from modules.visualization.interactive_dashboard import build_dashboard
+                        hs_col = self.config.get("data", {}).get("hs_column", "Hs_ft")
+                        adv_output_dropped = dropped_preds_dir / constants.ROUND_ADVANCED_VISUALIZATIONS_DIR
+                        # Val dashboard
+                        dash_path_val_dropped = adv_output_dropped / "interactive_dashboard_val_dropped.html"
+                        build_dashboard(dropped_model_info['val_predictions'], dash_path_val_dropped, hs_col=hs_col)
+                        # Test dashboard
+                        dash_path_test_dropped = adv_output_dropped / "interactive_dashboard_test_dropped.html"
+                        build_dashboard(dropped_test_preds, dash_path_test_dropped, hs_col=hs_col)
+                    except Exception as exc:  # noqa: BLE001
+                        self.logger.warning(f"Dashboard for dropped model skipped: {exc}")
 
                 self.logger.info("  >> Phase 6: Comparing Baseline vs. Dropped Model...")
                 comparison_summary = self.comparison_engine.compare(
@@ -223,6 +258,9 @@ class RFEController:
                 'comparison': comparison_summary
             }
             self.rounds_history.append(round_summary)
+
+            # Save round-level artifacts to standardized directories
+            self._save_round_artifacts(round_dir, round_summary, best_config, baseline_model)
 
             # Phase 7: Update Global Evolution Tracker
             self.logger.info("  >> Phase 7: Updating Global Evolution Tracker...")
@@ -277,6 +315,7 @@ class RFEController:
         if round_dir.exists():
             created = self.results_layout.ensure_round_structure(round_dir)
             self._write_structure_flag(structure_flag, created)
+            self._create_directory_readmes(round_dir)
             return
 
         # Fresh build: create in temp, then atomic rename to final
@@ -284,6 +323,7 @@ class RFEController:
             temp_dir.mkdir(parents=True, exist_ok=True)
             created = self.results_layout.ensure_round_structure(temp_dir)
             self._write_structure_flag(temp_dir / "_ROUND_STRUCTURE_READY.flag", created)
+            self._create_directory_readmes(temp_dir)
             temp_dir.replace(round_dir)
         except Exception as e:
             # Cleanup temp on failure
@@ -402,7 +442,7 @@ class RFEController:
 
         return best_config
 
-    def _train_baseline_phase(self, round_dir, model_config, train, val, test) -> Tuple[Dict, pd.DataFrame, pd.DataFrame]:
+    def _train_baseline_phase(self, round_dir, model_config, train, val, test) -> Tuple[Dict, pd.DataFrame, pd.DataFrame, Any]:
         """
         Train baseline model with all current active features and evaluate.
         """
@@ -439,11 +479,18 @@ class RFEController:
         save_dataframe(pd.DataFrame([val_metrics]), val_metrics_path, excel_copy=excel_copy, index=False)
         save_dataframe(pd.DataFrame([test_metrics]), test_metrics_path, excel_copy=excel_copy, index=False)
 
-        # 6. Run Error Analysis on test set
+        # 6. Run Error Analysis on both val and test sets
         temp_ea_config = self.config.copy()
         temp_ea_config['outputs'] = self.config['outputs'].copy()
         temp_ea_config['outputs']['base_results_dir'] = str(output_dir)
         temp_error_analyzer = ErrorAnalysisEngine(temp_ea_config, self.logger)
+        # Val Error Analysis
+        temp_error_analyzer.execute(
+            predictions=val_predictions,
+            features=filtered_val,
+            split_name="val"
+        )
+        # Test Error Analysis
         temp_error_analyzer.execute(
             predictions=test_predictions,
             features=filtered_test,
@@ -461,22 +508,30 @@ class RFEController:
         temp_diag_engine.execute(val_predictions, "val_baseline", "baseline")
         temp_diag_engine.execute(test_predictions, "test_baseline", "baseline")
 
-        # 8. Advanced visuals (optional)
+        # 8. Advanced visuals (optional) - run on both val and test
         if self.run_advanced_suite:
             try:
                 from modules.visualization.advanced_viz import AdvancedVisualizer
                 adv_viz = AdvancedVisualizer(self.config, self.logger)
                 adv_output = output_dir / constants.ROUND_ADVANCED_VISUALIZATIONS_DIR
+                # Val advanced viz
+                adv_viz.run_default_suite(val_predictions, adv_output, split_name="val_baseline")
+                # Test advanced viz
                 adv_viz.run_default_suite(test_predictions, adv_output, split_name="test_baseline")
             except Exception as exc:  # noqa: BLE001
                 self.logger.warning(f"Advanced visualizations skipped: {exc}")
 
-        # 9. Interactive dashboard (optional)
+        # 9. Interactive dashboard (optional) - generate for both val and test
         if self.run_dashboard:
             try:
                 from modules.visualization.interactive_dashboard import build_dashboard
-                dash_path = output_dir / constants.ROUND_ADVANCED_VISUALIZATIONS_DIR / "interactive_dashboard_test_baseline.html"
-                build_dashboard(test_predictions, dash_path, hs_col=self.config.get("data", {}).get("hs_column", "Hs_ft"))
+                hs_col = self.config.get("data", {}).get("hs_column", "Hs_ft")
+                # Val dashboard
+                dash_path_val = output_dir / constants.ROUND_ADVANCED_VISUALIZATIONS_DIR / "interactive_dashboard_val_baseline.html"
+                build_dashboard(val_predictions, dash_path_val, hs_col=hs_col)
+                # Test dashboard
+                dash_path_test = output_dir / constants.ROUND_ADVANCED_VISUALIZATIONS_DIR / "interactive_dashboard_test_baseline.html"
+                build_dashboard(test_predictions, dash_path_test, hs_col=hs_col)
             except Exception as exc:  # noqa: BLE001
                 self.logger.warning(f"Dashboard generation skipped: {exc}")
 
@@ -492,7 +547,7 @@ class RFEController:
 
         self.logger.info(f"  Baseline Model - Val CMAE: {val_metrics['cmae']:.4f}°, Test CMAE: {test_metrics['cmae']:.4f}°")
 
-        return combined_metrics, val_predictions, test_predictions
+        return combined_metrics, val_predictions, test_predictions, baseline_model
 
     def _execute_lofo_phase(self, round_dir, model_config, train, val, test, baseline_metrics) -> List[Dict]:
         """
@@ -1037,3 +1092,306 @@ class RFEController:
             gates_df = pd.DataFrame(gate_rows)
             save_dataframe(gates_df, round_dir / constants.ROUND_BASE_MODEL_RESULTS_DIR / "safety_gate_status.parquet", excel_copy=excel_copy, index=False)
             save_dataframe(gates_df, self.base_dir / "safety_gate_status_all_rounds.parquet", excel_copy=excel_copy, index=False)
+
+    def _save_round_artifacts(self, round_dir: Path, round_summary: Dict, best_config: Dict, baseline_model: Any) -> None:
+        """
+        Save round-level artifacts to standardized directories (13, 16, 17).
+        """
+        excel_copy = self.config.get("outputs", {}).get("save_excel_copy", False)
+
+        # Directory 13: Model Training Details
+        training_dir = round_dir / constants.ROUND_TRAINING_DIR
+        training_dir.mkdir(parents=True, exist_ok=True)
+
+        # Save hyperparameters used for training
+        hparams_data = {
+            'model': best_config.get('model', 'unknown'),
+            'params': json.dumps(best_config.get('params', {})),
+            'config_id': best_config.get('config_id', -1),
+            'cv_cmae': best_config.get('cv_cmae', np.nan),
+            'cv_crmse': best_config.get('cv_crmse', np.nan),
+            'round': self.current_round
+        }
+        save_dataframe(pd.DataFrame([hparams_data]), training_dir / "training_config.parquet", excel_copy=excel_copy, index=False)
+
+        # Save model if config says so
+        if self.config.get("outputs", {}).get("save_models", False):
+            try:
+                import joblib
+                model_path = training_dir / f"baseline_model_round_{self.current_round:03d}.joblib"
+                joblib.dump(baseline_model, model_path)
+                self.logger.info(f"    Saved baseline model to {model_path}")
+            except Exception as exc:
+                self.logger.warning(f"    Could not save model: {exc}")
+
+        # Directory 16: Round Metrics Summary
+        metrics_summary_dir = round_dir / constants.ROUND_METRICS_DIR
+        metrics_summary_dir.mkdir(parents=True, exist_ok=True)
+
+        # Flatten metrics for easy viewing
+        round_metrics = {
+            'round': self.current_round,
+            'n_features': round_summary['n_features'],
+            'dropped_feature': round_summary['dropped_feature'],
+            **round_summary['metrics']  # Includes both val_ and test_ prefixed metrics
+        }
+        save_dataframe(pd.DataFrame([round_metrics]), metrics_summary_dir / "round_metrics.parquet", excel_copy=excel_copy, index=False)
+
+        # Directory 17: Feature List Evolution
+        features_dir = round_dir / constants.ROUND_FEATURES_DIR
+        features_dir.mkdir(parents=True, exist_ok=True)
+
+        # Save current active features
+        features_data = pd.DataFrame({
+            'round': [self.current_round] * len(self.active_features),
+            'feature': self.active_features,
+            'status': ['active'] * len(self.active_features)
+        })
+        save_dataframe(features_data, features_dir / "features_active.parquet", excel_copy=excel_copy, index=False)
+
+        # Save dropped feature
+        if round_summary['dropped_feature']:
+            dropped_data = pd.DataFrame({
+                'round': [self.current_round],
+                'feature': [round_summary['dropped_feature']],
+                'status': ['dropped'],
+                'reason': [f"Lowest val CMAE when removed"]
+            })
+            save_dataframe(dropped_data, features_dir / "feature_dropped.parquet", excel_copy=excel_copy, index=False)
+
+        # Also save a cumulative feature evolution file at base level
+        all_features_history = []
+        for r_idx, r_sum in enumerate(self.rounds_history):
+            all_features_history.append({
+                'round': r_sum['round'],
+                'n_features': r_sum['n_features'],
+                'dropped_feature': r_sum.get('dropped_feature', ''),
+                'val_cmae': r_sum['metrics'].get('val_cmae', r_sum['metrics'].get('cmae', np.nan)),
+                'test_cmae': r_sum['metrics'].get('test_cmae', np.nan)
+            })
+        if all_features_history:
+            save_dataframe(pd.DataFrame(all_features_history), self.base_dir / "feature_elimination_history.parquet", excel_copy=excel_copy, index=False)
+
+    def _create_directory_readmes(self, round_dir: Path) -> None:
+        """
+        Create README files in each directory to explain their purpose.
+        """
+        readme_contents = {
+            constants.ROUND_DATASETS_DIR: """# Feature Set for Current Round
+
+This directory contains the list of active features used in this round.
+
+**Files:**
+- `feature_list.json`: Complete list of features with metadata
+- `feature_list_checksum.txt`: SHA256 checksum for data integrity validation
+
+The feature list is used by all models trained in this round.
+""",
+            constants.ROUND_GRID_SEARCH_DIR: """# Hyperparameter Grid Search Results
+
+This directory contains the hyperparameter optimization (HPO) results.
+
+**Files:**
+- `HPO_GridSearch/results/all_configurations.parquet`: All tested hyperparameter configurations with CV scores
+- `HPO_GridSearch/results/cv_consistency_*.parquet`: Cross-validation fold consistency for each configuration
+- `best_config.json`: Best hyperparameter configuration selected based on validation CMAE
+
+**Decision Criteria:** Configurations ranked by validation set CMAE (lower is better).
+""",
+            constants.ROUND_HPO_ANALYSIS_DIR: """# Hyperparameter Analysis
+
+This directory contains analysis and visualizations of HPO results.
+
+**Files:**
+- `optimal_ranges/`: Optimal hyperparameter ranges for each parameter
+- `visualizations/`: Plots showing parameter importance, convergence, and correlations
+- `summary.parquet`: Summary statistics of HPO search
+
+Helps understand which hyperparameters matter most for model performance.
+""",
+            constants.ROUND_BASE_MODEL_RESULTS_DIR: """# Baseline Model (With All Active Features)
+
+This directory contains results for the baseline model trained with ALL active features from this round.
+
+**Files:**
+- `baseline_predictions_val.parquet`: Predictions on validation set
+- `baseline_predictions_test.parquet`: Predictions on test set
+- `baseline_metrics_val.parquet`: Validation set metrics
+- `baseline_metrics_test.parquet`: Test set metrics
+- `ErrorAnalysis/val/`: Error analysis for validation set
+- `ErrorAnalysis/test/`: Error analysis for test set
+- `DiagnosticPlots/`: Standard diagnostic plots (residuals, scatter, etc.)
+- `10_DiagnosticPlots_Advanced/`: Advanced visualizations (3D surfaces, contours, etc.)
+
+**Decision Impact:** Val metrics used for feature selection decisions.
+**Test Metrics:** Reported for transparency but NOT used in decision-making.
+""",
+            constants.ROUND_FEATURE_EVALUATION_DIR: """# Feature Importance Ranking (LOFO Analysis)
+
+This directory contains Leave-One-Feature-Out (LOFO) evaluation results.
+
+**Files:**
+- `lofo_summary.parquet`: Performance metrics when each feature is removed
+- `feature_evaluation_plots/`: Visualizations showing impact of removing each feature
+
+**Ranking Logic:**
+- Features ranked by validation CMAE when removed
+- Lower CMAE when removed = feature was less useful
+- Feature with lowest CMAE when removed is selected for dropping
+
+**Important:** Rankings based on VALIDATION set performance, not test set.
+""",
+            constants.ROUND_DROPPED_FEATURE_RESULTS_DIR: """# Reduced Model (Feature Dropped)
+
+This directory contains results for the model after dropping the selected feature.
+
+**Files:**
+- `dropped_predictions_val.parquet`: Predictions on validation set (without dropped feature)
+- `dropped_predictions_test.parquet`: Predictions on test set (without dropped feature)
+- `ErrorAnalysis/val/`: Error analysis for validation set
+- `ErrorAnalysis/test/`: Error analysis for test set
+- `DiagnosticPlots/`: Standard diagnostic plots
+- `10_DiagnosticPlots_Advanced/`: Advanced visualizations
+
+This model becomes the baseline for the next round.
+""",
+            constants.ROUND_COMPARISON_DIR: """# Model Comparison (Baseline vs Dropped)
+
+This directory contains comparisons between the baseline model and the dropped-feature model.
+
+**Files:**
+- `delta_metrics.parquet`: Metric changes (dropped - baseline)
+- `comprehensive_model_comparison.parquet`: Side-by-side comparison of all metrics
+- `improvement_summary.txt`: Human-readable summary
+- `comparison_plots/`: Visual comparisons (CDF, scatter overlays, etc.)
+- `significance_baseline_vs_dropped_*.parquet`: Statistical significance tests
+
+Helps validate that dropping the feature didn't severely harm performance.
+""",
+            constants.ROUND_ERROR_ANALYSIS_DIR: """# Error Analysis by Conditions
+
+This directory contains detailed error breakdowns by wave conditions (Hs, angle bins).
+
+**Files:**
+- Safety threshold summaries
+- Error distributions by condition bins
+- Outlier detection results
+
+Both validation and test set analyses are included.
+""",
+            constants.ROUND_DIAGNOSTICS_DIR: """# Standard Diagnostic Plots
+
+This directory contains standard model diagnostic visualizations.
+
+**Plots:**
+- Residual plots
+- Prediction scatter plots
+- Error distributions
+- QQ plots
+
+**Naming Convention:**
+- `val_baseline`: Validation set, baseline model (all features)
+- `test_baseline`: Test set, baseline model
+- `val_dropped`: Validation set, dropped-feature model
+- `test_dropped`: Test set, dropped-feature model
+""",
+            constants.ROUND_ADVANCED_VISUALIZATIONS_DIR: """# Advanced Diagnostic Plots
+
+This directory contains advanced 3D and specialized visualizations.
+
+**Plots:**
+- 3D error surfaces (Angle vs Hs vs Error)
+- Optimal zone maps
+- Circular error plots
+- Boundary analysis
+- Performance contours
+- Interactive dashboards (HTML)
+
+**Naming Convention:**
+- `val_baseline`: Validation set, baseline model (all features)
+- `test_baseline`: Test set, baseline model
+- `val_dropped`: Validation set, dropped-feature model
+- `test_dropped`: Test set, dropped-feature model
+
+**Decision Criteria:** Validation plots inform decisions; test plots for final reporting.
+""",
+            constants.ROUND_BOOTSTRAPPING_DIR: """# Uncertainty Analysis (Bootstrap)
+
+Bootstrap resampling results for confidence interval estimation.
+
+Files will be generated here if bootstrapping is enabled in config.
+""",
+            constants.ROUND_STABILITY_DIR: """# Model Stability (Cross-Validation)
+
+Cross-validation consistency and overfitting analysis.
+
+Files will be generated here if stability analysis is enabled in config.
+""",
+            constants.ROUND_TRAINING_DIR: """# Model Training Details
+
+This directory contains training artifacts and model checkpoints.
+
+**Files:**
+- `training_config.parquet`: Hyperparameters used for training
+- `baseline_model_round_*.joblib`: Saved baseline model (if save_models=true)
+
+Useful for model reconstruction and reproducibility.
+""",
+            constants.ROUND_PREDICTIONS_DIR: """# Predictions (All Splits)
+
+Consolidated predictions from all data splits.
+
+**Files:**
+- `predictions_val.parquet`: Validation set predictions
+- `predictions_test.parquet`: Test set predictions
+
+Mirrored from baseline model results for easy access.
+""",
+            constants.ROUND_EVALUATION_DIR: """# Performance Metrics (All Splits)
+
+Consolidated performance metrics from all data splits.
+
+**Files:**
+- `metrics_val.parquet`: Validation metrics
+- `metrics_test.parquet`: Test metrics
+- `combined_metrics.parquet`: Both splits combined with 'split' column
+
+**Decision Criteria:** Validation metrics drive all RFE decisions.
+""",
+            constants.ROUND_METRICS_DIR: """# Round Metrics Summary
+
+High-level summary of this round's performance.
+
+**Files:**
+- `round_metrics.parquet`: Complete metrics table with round metadata
+
+Includes round number, feature count, dropped feature, and all val/test metrics.
+""",
+            constants.ROUND_FEATURES_DIR: """# Feature List Evolution
+
+Tracks which features are active vs dropped in this round.
+
+**Files:**
+- `features_active.parquet`: List of features still active
+- `feature_dropped.parquet`: Feature removed this round with reason
+
+Cumulative history available in base results directory.
+""",
+            constants.ROUND_EVOLUTION_PLOTS_DIR: """# Evolution Plots (Round Progress)
+
+Visualizations showing how model performance evolves across rounds.
+
+**Files:**
+- Performance trend plots
+- Feature count vs CMAE
+- Cumulative improvement charts
+
+Generated by the evolution tracker.
+"""
+        }
+
+        for dir_const, content in readme_contents.items():
+            readme_path = round_dir / dir_const / "README.md"
+            readme_path.parent.mkdir(parents=True, exist_ok=True)
+            if not readme_path.exists():  # Don't overwrite existing READMEs
+                readme_path.write_text(content)

@@ -246,7 +246,7 @@ class HyperparameterAnalyzer(BaseEngine):
             for j, x_val in enumerate(pivot.columns):
                 if str(x_val) in [str(v) for v in opt_x_vals] and str(y_val) in [str(v) for v in opt_y_vals]:
                     # Use matplotlib scatter with star marker instead of Unicode text
-                    ax.scatter(j + 0.5, i + 0.5, marker='*', s=500, color='gold', edgecolors='red', linewidths=2, zorder=10)
+                    ax.scatter(j + 0.5, i + 0.5, marker='*', s=200, color='gold', edgecolors='red', linewidths=1.5, zorder=10)
 
     def _add_heatmap_overlay_highlight(self, ax, pivot, top_df, x_col, y_col):
         opt_x_vals, opt_y_vals = top_df[x_col].unique(), top_df[y_col].unique()
@@ -290,9 +290,15 @@ class HyperparameterAnalyzer(BaseEngine):
         elif not zoom and style == 'stars':
             opt_x, opt_y = top_df[x_col].values, top_df[y_col].values
             plt.scatter(opt_x, opt_y, marker='*', s=200, c='gold', edgecolors='red', linewidths=2, label='Optimal Configs'); plt.legend()
-        clean_x, clean_y = x_col.replace('param_', ''), y_col.replace('param_', '')
-        plt.xlabel(clean_x); plt.ylabel(clean_y)
-        plt.title(f"2D Contour [{style}]: {clean_x} vs {clean_y} {title_suffix}\n{z_col}")
+        clean_x = x_col.replace('param_', '').replace('_', ' ').title()
+        clean_y = y_col.replace('param_', '').replace('_', ' ').title()
+        plt.xlabel(clean_x, fontsize=12)
+        plt.ylabel(clean_y, fontsize=12)
+        plt.title(
+            f"Hyperparameter Contour Map: {clean_x} vs {clean_y} {title_suffix}\n{z_col}",
+            fontsize=13,
+            fontweight='bold'
+        )
         plt.tight_layout(); plt.savefig(output_path, dpi=200, bbox_inches='tight'); plt.close()
 
     def _plot_3d_surface(self, df: pd.DataFrame, top_df: pd.DataFrame, x_col: str, y_col: str, z_col: str, output_path: Path, style: str, zoom: bool = False):

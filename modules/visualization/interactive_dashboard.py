@@ -39,7 +39,24 @@ def build_dashboard(
 
     df = predictions.copy()
     if df.empty:
-        raise ValueError("Predictions DataFrame is empty.")
+        fig = go.Figure()
+        fig.add_annotation(
+            text="No data available for visualization",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=20, color="red"),
+        )
+        fig.update_layout(
+            title=title,
+            template="plotly_white",
+            height=400,
+            showlegend=False,
+        )
+        fig.write_html(str(output_path), include_plotlyjs="cdn", full_html=True)
+        return output_path
 
     if "abs_error" not in df.columns or "true_angle" not in df.columns or "pred_angle" not in df.columns:
         raise ValueError("Predictions must include columns: true_angle, pred_angle, abs_error.")

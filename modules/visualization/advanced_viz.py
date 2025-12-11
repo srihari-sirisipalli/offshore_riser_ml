@@ -259,9 +259,10 @@ class AdvancedVisualizer:
         )
 
         # Labels and title
-        ax.set_xlabel('Hs (ft)', fontsize=11)
-        ax.set_ylabel('Angle (degrees)', fontsize=11)
-        ax.set_zlabel('Absolute Error (degrees)', fontsize=11)
+        hs_label = f"{hs_col} (ft)" if hs_col.lower().endswith("ft") else hs_col
+        ax.set_xlabel(hs_label, fontsize=12)
+        ax.set_ylabel('Angle (deg)', fontsize=12)
+        ax.set_zlabel('Abs Error (deg)', fontsize=12)
         ax.set_title(
             f'3D Error Surface Map - {split_name.upper()} Set\n'
             f'N={len(df):,} points',
@@ -270,7 +271,7 @@ class AdvancedVisualizer:
         )
 
         # Colorbar
-        fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10, label='Error (deg)')
+        fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10, label='Abs Error (deg)')
 
         # Set viewing angle
         ax.view_init(elev=25, azim=45)
@@ -383,82 +384,99 @@ class AdvancedVisualizer:
             self.logger.warning(f"Missing required columns. Skipping.")
             return
 
-        # Bin Hs into intervals for aggregation
-        # Ensure bins cover the full range and have sufficient steps
-        min_hs = np.floor(df[hs_col].min())
-        max_hs = np.ceil(df[hs_col].max())
-        hs_bins = np.arange(min_hs, max_hs + 1, 1)
-
-        # Ensure there are at least two bins
-        if len(hs_bins) < 2:
-            # If range is too small, create a default set of bins with broader range
-            hs_bins = np.linspace(min_hs, max_hs + 1, 5) # Create 4 bin edges for 3 bins
-            if len(hs_bins) < 2: # Still not enough bins (e.g. all data points are same)
-                self.logger.warning(f"Insufficient range for Hs_ft to create meaningful bins. Skipping error vs Hs response plot.")
-                return
-
-        # Ensure bins are unique and sorted
-        hs_bins = np.unique(hs_bins)
-        if len(hs_bins) < 2:
-            self.logger.warning(f"Could not create valid bins for Hs_ft. Skipping error vs Hs response plot.")
+        # Bin Hs into intervals for aggregation with adaptive fallbacks
+        df = df.copy().dropna(subset=[hs_col, 'abs_error'])
+        raw_df = df.copy()
+        if df.empty:
+            self.logger.warning("No data available to plot error vs Hs response.")
             return
 
-        df['hs_bin'] = pd.cut(df[hs_col], bins=hs_bins, include_lowest=True, right=True)
+        min_hs = df[hs_col].min()
+        max_hs = df[hs_col].max()
+        hs_range = max_hs - min_hs
 
-        # Handle cases where some bins might be empty after cutting
+        def _build_bins(min_val: float, max_val: float, span: float) -> np.ndarray:
+            if span <= 0:
+                return np.array([min_val - 0.5, max_val + 0.5])
+            if span < 2:
+                step = 0.5
+            elif span < 10:
+                step = 1.0
+            else:
+                step = 2.0
+            bins = np.arange(min_val, max_val + step, step)
+            if bins.size < 3:
+                bins = np.linspace(min_val, max_val, max(3, int(np.ceil(span / max(step, 1e-6))) + 1))
+            return np.unique(bins)
+
+        hs_bins = _build_bins(min_hs, max_hs, hs_range)
+        if len(hs_bins) < 2:
+            hs_bins = np.array([min_hs - 0.5, max_hs + 0.5])
+
+        df['hs_bin'] = pd.cut(df[hs_col], bins=hs_bins, include_lowest=True, right=True, duplicates='drop')
         df = df.dropna(subset=['hs_bin'])
         if df.empty:
-            self.logger.warning(f"No data points left after binning Hs_ft. Skipping error vs Hs response plot.")
+            self.logger.warning("No data points left after adaptive binning. Falling back to raw scatter.")
+            plt.figure(figsize=(10, 6))
+            plt.scatter(raw_df[hs_col], raw_df['abs_error'], alpha=0.3, s=20, color='blue')
+            plt.xlabel(f'{hs_col} (ft)')
+            plt.ylabel('Abs Error (deg)')
+            plt.title(f'{split_name.upper()}: Error vs Hs (Raw Data)')
+            plt.grid(True, alpha=0.3, linestyle='--')
+            plt.tight_layout()
+            plt.savefig(output_path, dpi=200, bbox_inches='tight')
+            plt.close()
             return
 
-        # Aggregate statistics
-        agg = df.groupby('hs_bin', observed=False)['abs_error'].agg(['mean', 'std', 'count']) # observed=False for future compatibility
+        agg = df.groupby('hs_bin', observed=True)['abs_error'].agg(['mean', 'std', 'count'])
         agg['hs_center'] = [interval.mid for interval in agg.index]
-        agg = agg.dropna()
-        if agg.empty: # If all bins are empty or dropna makes it empty
-             self.logger.warning(f"Aggregated data for Hs_ft is empty. Skipping error vs Hs response plot.")
-             return
+        agg = agg.dropna(subset=['hs_center'])
+        if agg.empty:
+            self.logger.warning("Aggregated data for Hs is empty after binning. Falling back to raw scatter.")
+            plt.figure(figsize=(10, 6))
+            plt.scatter(raw_df[hs_col], raw_df['abs_error'], alpha=0.3, s=20, color='blue')
+            plt.xlabel(f'{hs_col} (ft)')
+            plt.ylabel('Abs Error (deg)')
+            plt.title(f'{split_name.upper()}: Error vs Hs (Raw Data)')
+            plt.grid(True, alpha=0.3, linestyle='--')
+            plt.tight_layout()
+            plt.savefig(output_path, dpi=200, bbox_inches='tight')
+            plt.close()
+            return
 
-        # Percentiles - ensure they are based on the binned df
-        # Percentiles - calculate from the same grouped data as agg, and ensure index alignment
-        p25 = df.groupby('hs_bin', observed=False)['abs_error'].quantile(0.25).reindex(agg.index)
-        p75 = df.groupby('hs_bin', observed=False)['abs_error'].quantile(0.75).reindex(agg.index)
-        
-        # Fill NaN for percentiles if any bin in agg had no corresponding percentile (unlikely if agg is not empty)
+        p25 = df.groupby('hs_bin', observed=True)['abs_error'].quantile(0.25).reindex(agg.index)
+        p75 = df.groupby('hs_bin', observed=True)['abs_error'].quantile(0.75).reindex(agg.index)
         p25 = p25.ffill().bfill()
         p75 = p75.ffill().bfill()
-
-        if p25.empty or p75.empty:
-            self.logger.warning(f"Percentile data for Hs_ft is empty. Skipping error vs Hs response plot.")
-            return
 
         # Create plot
         fig, ax = plt.subplots(figsize=(14, 7))
 
-        # Scatter raw data
-        ax.scatter(df[hs_col], df['abs_error'], alpha=0.1, s=10, color='gray', label='Raw Data')
+        # Scatter raw data with better visibility
+        ax.scatter(df[hs_col], df['abs_error'], alpha=0.3, s=20, color='gray', label='Raw Data', zorder=1)
 
         # Mean line
-        ax.plot(agg['hs_center'], agg['mean'], linewidth=2.5, color='blue', label='Mean Error')
+        ax.plot(agg['hs_center'], agg['mean'], linewidth=3, color='blue', label='Mean Error', zorder=3)
 
         # Std band
         ax.fill_between(
             agg['hs_center'],
             agg['mean'] - agg['std'],
             agg['mean'] + agg['std'],
-            alpha=0.3,
+            alpha=0.25,
             color='blue',
-            label='± 1 Std Dev'
+            label='+/-1 Std Dev',
+            zorder=2
         )
 
         # Percentile lines
-        ax.plot(agg['hs_center'], p25, linestyle='--', color='green', alpha=0.7, label='25th Percentile')
-        ax.plot(agg['hs_center'], p75, linestyle='--', color='red', alpha=0.7, label='75th Percentile')
+        ax.plot(agg['hs_center'], p25, linestyle='--', color='green', alpha=0.8, linewidth=2, label='25th Percentile', zorder=2)
+        ax.plot(agg['hs_center'], p75, linestyle='--', color='red', alpha=0.8, linewidth=2, label='75th Percentile', zorder=2)
 
         # Threshold lines
-        ax.axhline(5, color='yellow', linestyle=':', linewidth=2, label='Acceptable Threshold (5°)')
-        ax.axhline(10, color='orange', linestyle=':', linewidth=2, label='Warning Threshold (10°)')
-        ax.axhline(15, color='red', linestyle=':', linewidth=2, label='Critical Threshold (15°)')
+        ax.axhline(5, color='yellow', linestyle=':', linewidth=2, label='Acceptable Threshold (5 deg)', zorder=0)
+        ax.axhline(10, color='orange', linestyle=':', linewidth=2, label='Warning Threshold (10 deg)', zorder=0)
+        ax.axhline(15, color='red', linestyle=':', linewidth=2, label='Critical Threshold (15 deg)', zorder=0)
 
         # Find optimal Hs range (lowest mean error)
         if len(agg) > 0:
@@ -466,28 +484,30 @@ class AdvancedVisualizer:
             optimal_hs = agg.loc[optimal_idx, 'hs_center']
             optimal_error = agg.loc[optimal_idx, 'mean']
 
-            ax.axvline(optimal_hs, color='green', linestyle='-.', alpha=0.5, linewidth=2)
+            ax.axvline(optimal_hs, color='green', linestyle='-.', alpha=0.6, linewidth=2)
+            ax.scatter([optimal_hs], [optimal_error], s=160, color='green', marker='*', edgecolors='black', linewidths=1.5, zorder=4)
             ax.annotate(
-                f'Optimal Zone\nHs ≈ {optimal_hs:.1f} ft\nError = {optimal_error:.2f}°',
+                f'Optimal Hs ~ {optimal_hs:.2f}\\nMean Error = {optimal_error:.2f} deg',
                 xy=(optimal_hs, optimal_error),
-                xytext=(optimal_hs + 2, optimal_error + 3),
-                arrowprops=dict(arrowstyle='->', color='green', lw=1.5),
-                bbox=dict(boxstyle='round,pad=0.5', facecolor='lightgreen', alpha=0.7),
+                xytext=(optimal_hs + max(0.5, hs_range * 0.05), optimal_error + max(1, df["abs_error"].std())),
+                arrowprops=dict(arrowstyle='->', color='green', lw=1.2),
+                bbox=dict(boxstyle='round,pad=0.4', facecolor='white', alpha=0.8),
                 fontsize=10
             )
 
         # Labels
-        ax.set_xlabel('Hs (ft)', fontsize=12)
-        ax.set_ylabel('Absolute Error (degrees)', fontsize=12)
+        ax.set_xlabel(f'{hs_col} (ft)', fontsize=12)
+        ax.set_ylabel('Absolute Error (deg)', fontsize=12)
         ax.set_title(
-            f'Error vs Hs Response Curve - {split_name.upper()} Set\n'
+            f'Error vs Hs Response Curve - {split_name.upper()} Set\\n'
             f'N={len(df):,} points',
             fontsize=13,
             fontweight='bold'
         )
         ax.legend(loc='upper left', framealpha=0.9)
-        ax.grid(True, alpha=0.3)
-        ax.set_ylim(0, min(30, df['abs_error'].quantile(0.99)))
+        ax.grid(True, alpha=0.3, linestyle='--', axis='both')
+        ax.set_axisbelow(True)
+        ax.set_ylim(bottom=0)
 
         plt.tight_layout()
         plt.savefig(output_path, dpi=200, bbox_inches='tight')
@@ -496,6 +516,7 @@ class AdvancedVisualizer:
 
     # =========================================================================
     # #4: CIRCULAR ERROR VS ANGLE PLOT
+
     # =========================================================================
     def plot_circular_error_vs_angle(self, df: pd.DataFrame, output_path: Path,
                                       split_name: str = 'test'):
@@ -1316,11 +1337,12 @@ class AdvancedVisualizer:
         subset = subset.sort_values('true_angle')
         subset['gradient'] = np.gradient(subset['abs_error'])
         plt.figure(figsize=(10, 5))
-        plt.plot(subset['true_angle'], subset['gradient'], color='#ff7f0e')
+        plt.scatter(subset['true_angle'], subset['gradient'], color='#ff7f0e', s=20, alpha=0.6)
         plt.axhline(0, color='black', linestyle='--', linewidth=1)
         plt.xlabel("True Angle (deg)")
         plt.ylabel("Gradient of Abs Error")
         plt.title("Boundary Gradient of Error near 0/360")
+        plt.grid(True, alpha=0.3, linestyle='--')
         plt.tight_layout()
         plt.savefig(output_path, dpi=200, bbox_inches='tight')
         plt.close()

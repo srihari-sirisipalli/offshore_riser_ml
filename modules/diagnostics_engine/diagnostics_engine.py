@@ -174,6 +174,8 @@ class DiagnosticsEngine(BaseEngine):
         plt.xlabel('Sample Index')
         plt.ylabel('Angle (deg)')
         plt.legend()
+        plt.grid(True, alpha=0.3, linestyle='--', axis='y')
+        plt.tight_layout()
         self._save_fig(output_dir, f"index_vs_values_{split}", fig, figs)
         
         # 2. Index vs Error (Scatter)
@@ -181,14 +183,20 @@ class DiagnosticsEngine(BaseEngine):
         plt.scatter(df.index, df['error'], color='purple', alpha=0.6, s=10)
         plt.axhline(0, color='black', linestyle='--', linewidth=1)
         plt.title(f'{split.upper()}: Index vs Error')
+        plt.xlabel('Sample Index')
         plt.ylabel('Error (deg)')
+        plt.grid(True, alpha=0.3, linestyle='--', axis='y')
+        plt.tight_layout()
         self._save_fig(output_dir, f"index_vs_error_{split}", fig, figs)
         
         # 3. Index vs Abs Error (Scatter)
         fig = plt.figure(figsize=(12, 4))
         plt.scatter(df.index, df['abs_error'], color='darkorange', alpha=0.6, s=10)
         plt.title(f'{split.upper()}: Index vs Absolute Error')
+        plt.xlabel('Sample Index')
         plt.ylabel('Abs Error (deg)')
+        plt.grid(True, alpha=0.3, linestyle='--', axis='y')
+        plt.tight_layout()
         self._save_fig(output_dir, f"index_vs_abs_error_{split}", fig, figs)
 
     def _plot_scatter(self, df: pd.DataFrame, split: str, output_dir: Path, figs: list):
@@ -271,9 +279,10 @@ class DiagnosticsEngine(BaseEngine):
         fig = plt.figure(figsize=(10, 6))
         sns.scatterplot(data=df, x=hs_col, y='abs_error', alpha=0.5, s=20)
         unit = "(ft)" if hs_col.endswith("_ft") or hs_col.lower().endswith("hs_ft") else "(m)"
-        plt.title(f'{split.upper()}: Absolute Error vs Hs')
         plt.xlabel(f'Significant Wave Height {unit}')
         plt.ylabel('Abs Error (deg)')
+        plt.title(f'{split.upper()}: Absolute Error vs Hs')
+        plt.grid(True, alpha=0.3, linestyle='--')
         self._save_fig(output_dir, f"error_vs_hs_scatter_{split}", fig, figs)
         
         # Boxplot by Hs Bin (if available)

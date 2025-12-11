@@ -8,6 +8,7 @@ import logging
 from pathlib import Path
 from typing import List, Dict, Callable, Tuple
 from joblib import Parallel, delayed
+from utils import constants
 
 class RFEVisualizer:
     """
@@ -65,9 +66,9 @@ class RFEVisualizer:
     def visualize_lofo_impact(self, round_dir: Path, lofo_results: List[Dict]):
         """
         Generates plots summarizing the impact of removing each feature.
-        Output: 04_FEATURE_EVALUATION/feature_evaluation_plots/
+        Output: 05_Feature_ImportanceRanking/feature_evaluation_plots/
         """
-        output_dir = round_dir / "04_FEATURE_EVALUATION" / "feature_evaluation_plots"
+        output_dir = round_dir / constants.ROUND_FEATURE_EVALUATION_DIR / "feature_evaluation_plots"
         output_dir.mkdir(parents=True, exist_ok=True)
         
         if not lofo_results:
@@ -151,9 +152,9 @@ class RFEVisualizer:
                              dropped_metrics: dict = None):
         """
         Generates comprehensive comparison plots comparing Baseline vs Best Dropped Model.
-        Output: 06_COMPARISON/comparison_plots/
+        Output: 07_ModelComparison_BaseVsReduced/comparison_plots/
         """
-        output_dir = round_dir / "06_COMPARISON" / "comparison_plots"
+        output_dir = round_dir / constants.ROUND_COMPARISON_DIR / "comparison_plots"
         output_dir.mkdir(parents=True, exist_ok=True)
 
         # Align dataframes by index just in case
@@ -207,25 +208,37 @@ class RFEVisualizer:
         self._save_and_close(output_dir / "before_after_error_cdf.png")
 
     def _plot_scatter_overlay(self, base_df, drop_df, fname, output_dir):
-        """Scatter plot of True vs Predicted for both models."""
-        plt.figure(figsize=(10, 10))
-        
-        # Plot Baseline as small grey dots
-        plt.scatter(base_df['true_angle'], base_df['pred_angle'], 
-                    alpha=0.3, color='grey', s=20, label='Baseline')
-        
-        # Plot Dropped as smaller red dots on top
-        plt.scatter(drop_df['true_angle'], drop_df['pred_angle'], 
-                    alpha=0.3, color=self.colors['dropped'], s=20, label=f'Dropped ({fname})')
-        
-        # Ideal line
-        plt.plot([0, 360], [0, 360], 'k--', linewidth=1)
-        
+        """Scatter plot of True vs Predicted for both models with visibility tweaks."""
+        plt.figure(figsize=(12, 12))
+
+        plt.scatter(
+            base_df['true_angle'], base_df['pred_angle'],
+            alpha=0.4, color='grey', s=35, marker='o',
+            edgecolors='black', linewidths=0.3, label='Baseline', zorder=1
+        )
+
+        plt.scatter(
+            drop_df['true_angle'], drop_df['pred_angle'],
+            alpha=0.5, color=self.colors['dropped'], s=30, marker='x',
+            linewidths=1.5, label=f'Dropped ({fname})', zorder=2
+        )
+
+        plt.plot([0, 360], [0, 360], 'k--', linewidth=2, label='Perfect', zorder=0, alpha=0.7)
+
+        angles = np.array([0, 360])
+        plt.fill_between(angles, angles - 5, angles + 5, color='green', alpha=0.08, label='+/-5 deg', zorder=0)
+        plt.fill_between(angles, angles - 10, angles + 10, color='yellow', alpha=0.05, label='+/-10 deg', zorder=0)
+
         plt.xlabel("True Angle (deg)")
         plt.ylabel("Predicted Angle (deg)")
         plt.title(f"Prediction Scatter Overlay")
+        plt.xlim([0, 360])
+        plt.ylim([0, 360])
         plt.legend()
-        
+        plt.grid(True, alpha=0.3, linestyle='--', axis='both')
+        plt.gca().set_axisbelow(True)
+        plt.tight_layout()
+
         self._save_and_close(output_dir / "angle_scatter_overlay.png")
 
     def _plot_residual_dist_overlay(self, err_base, err_drop, fname, output_dir):
@@ -328,7 +341,8 @@ class RFEVisualizer:
         ax.set_xticks(x)
         ax.set_xticklabels(x_labels, rotation=0, ha='center')
         ax.legend(loc='upper left', framealpha=0.95)
-        ax.grid(axis='y', alpha=0.3)
+        ax.grid(axis='both', alpha=0.3, linestyle='--')
+        ax.set_axisbelow(True)
 
     def _add_delta_annotation(self, ax, x_pos, y_pos, delta, lower_is_better):
         """Add delta annotation with color coding."""

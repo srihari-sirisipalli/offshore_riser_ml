@@ -20,7 +20,9 @@
       "Bash(dir:*)",
       "Bash(Get-ChildItem -Path \"C:\\Users\\Sri\\Desktop\\offshore_riser_ml\\.cache\\splits\" -Filter \"*.parquet\")",
       "Bash(Remove-Item -Force)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(test:*)",
+      "Bash(python diagnose_plots.py:*)"
     ],
     "deny": [],
     "ask": []

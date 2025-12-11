@@ -10,6 +10,13 @@
     "validate_sin_cos_circle": true,
     "circle_tolerance": 0.01
   },
+  "data_quality_gates": {
+    "enabled": true,
+    "min_split_rows": 10,
+    "max_missing_pct": 5.0,
+    "min_feature_variance": 0.0,
+    "max_constant_features": 0
+  },
   "splitting": {
     "angle_bins": 12,
     "hs_bins": 6,
@@ -30,43 +37,107 @@
     "enabled": true,
     "cv_strategy": "kfold_on_train",
     "cv_folds": 5,
+    "max_trials": null,
     "grids": {
       "ExtraTreesRegressor": {
-        "n_estimators": [600, 1000],
-        "max_depth":[40, 60, null],
-        "min_samples_split": [2, 5],
-        "min_samples_leaf": [1, 2],
-        "max_features": ["sqrt", 0.5],
-        "bootstrap": [false],
-        "criterion" : ["squared_error"]
+        "n_estimators": [100],
+        "max_depth": [null],
+        "min_samples_split": [2],
+        "min_samples_leaf": [1],
+        "max_features": ["sqrt"]
       }
     }
   },
   "iterative": {
     "enabled": true,
-    "max_rounds": 7,
+    "max_rounds": 2,
     "min_features": 1,
-    "run_hpo_analysis": false
+    "run_hpo_analysis": true,
+    "stopping_criteria": "combined"
   },
   "execution": {
     "n_jobs": -1,
-    "deterministic": true
+    "deterministic": true,
+    "max_hours": null,
+    "parallel_hpo_configs": true
+  },
+  "evaluation": {
+    "bootstrap_samples": 0,
+    "bootstrap_alpha": 0.05,
+    "accuracy_bands": [0, 5, 10, 20],
+    "compute_naive_baseline": true,
+    "industry_baseline_cmae": null
+  },
+  "error_analysis": {
+    "enabled": true,
+    "threshold_bins": [0, 5, 10],
+    "safety_gates": {
+      "enabled": false,
+      "max_critical_pct": 25.0,
+      "max_warning_pct": 50.0
+    }
+  },
+  "diagnostics": {
+    "enabled": true,
+    "parallel_plots": true,
+    "plot_formats": ["png"],
+    "dpi": 150
+  },
+  "bootstrapping": {
+    "enabled": false,
+    "n_iterations": 100,
+    "sample_ratio": 1.0,
+    "confidence_level": 0.95,
+    "metrics": ["cmae", "crmse", "accuracy_at_5deg"]
+  },
+  "stability": {
+    "enabled": false,
+    "n_runs": 10,
+    "seed_offset": 1000,
+    "metrics": ["cmae", "crmse"]
+  },
+  "hpo_analysis": {
+    "enabled": true,
+    "optimal_top_percent": 10,
+    "plot_types": ["param_importance", "convergence", "correlation_matrix"]
+  },
+  "visualization": {
+    "run_advanced_suite": true,
+    "run_dashboard": true,
+    "parallel_plots": true,
+    "save_formats": ["png"],
+    "dpi": 150
   },
   "outputs": {
     "base_results_dir": "results_RiserAngle_ExtraTrees_RFE_167_to_1",
     "save_predictions": true,
-    "save_models": true
+    "save_models": true,
+    "save_excel_copy": false,
+    "save_reports_pdf": true
   },
   "logging": {
     "level": "INFO",
     "log_to_file": true,
     "log_to_console": true,
-    "colorful_console": true
+    "colorful_console": true,
+    "log_file_name": "pipeline.log"
   },
   "resources": {
     "max_hpo_configs": 1000,
     "max_file_size_mb": 1000,
     "max_memory_mb": 8192,
     "operation_timeout_sec": 3600
+  },
+  "reproducibility": {
+    "save_package": true,
+    "include_environment": true,
+    "include_data_checksums": true,
+    "include_code_snapshot": false
+  },
+  "reporting": {
+    "enabled": true,
+    "generate_executive_summary": true,
+    "generate_technical_report": true,
+    "include_plots": true
   }
 }

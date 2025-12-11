@@ -1,7 +1,26 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(tree:*)",
+      "Bash(for dir in tests/*/)",
+      "Bash(do if [ -f \"$dir__init__.py\" ])",
+      "Bash(then echo \"EXISTS: $dir\")",
+      "Bash(else echo \"MISSING: $dir\")",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(while read dir)",
+      "Bash(do if [ ! -d \"tests/$dir\" ])",
+      "Bash(then echo \"NO_TESTS: $dir\")",
+      "Bash(else echo \"HAS_TESTS: $dir\")",
+      "Bash(find:*)",
+      "Bash(wc:*)",
+      "Bash(grep:*)",
+      "Bash(findstr:*)",
+      "Bash(dir:*)",
+      "Bash(Get-ChildItem -Path \"C:\\Users\\Sri\\Desktop\\offshore_riser_ml\\.cache\\splits\" -Filter \"*.parquet\")",
+      "Bash(Remove-Item -Force)",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": []

@@ -8,14 +8,19 @@ is preserved across all splits, which is crucial for robust model evaluation.
 """
 import pandas as pd
 import numpy as np
-import os
 import matplotlib.pyplot as plt
 import logging
 from pathlib import Path
 from typing import Tuple, Optional
 from sklearn.model_selection import train_test_split
+from modules.base.base_engine import BaseEngine
+from utils.error_handling import handle_engine_errors
+from utils.cache import ensure_cache_dir, fingerprint
+from pandas.util import hash_pandas_object
+from utils.file_io import save_dataframe
+from utils import constants
 
-class SplitEngine:
+class SplitEngine(BaseEngine):
     """
     Splits data into Train/Val/Test sets using a robust stratified sampling strategy.
 
@@ -28,9 +33,14 @@ class SplitEngine:
     """
     
     def __init__(self, config: dict, logger: logging.Logger):
-        self.config = config
-        self.logger = logger
+        super().__init__(config, logger)
+        self.cache_enabled = self.config.get('execution', {}).get('enable_cache', True)
+        self.cache_dir = ensure_cache_dir(self.base_dir, "split_engine")
         
+    def _get_engine_directory_name(self) -> str:
+        return constants.MASTER_SPLITS_DIR
+
+    @handle_engine_errors("Data Splitting")
     def execute(self, df: pd.DataFrame, run_id: str) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Execute the splitting workflow.
@@ -40,31 +50,76 @@ class SplitEngine:
         """
         self.logger.info("Starting Split Engine execution...")
         
-        # 1. Output Directory
-        base_dir = self.config.get('outputs', {}).get('base_results_dir', 'results')
-        output_dir = Path(base_dir) / "02_SMART_SPLIT"
-        output_dir.mkdir(parents=True, exist_ok=True)
-        
-        # 2. Determine Stratification Column
+        # 1. Determine Stratification Column
         # Your data has 3456 unique bins for 3888 rows (High Cardinality).
         # Direct combined_bin stratification will fail. We need to check feasibility.
         stratify_col = self._determine_stratification_strategy(df)
+
+        signature = self._compute_signature(df)
+        if self.cache_enabled and signature:
+            cached = self._try_load_cached_split(signature)
+            if cached:
+                train, val, test = cached
+                self.logger.info(f"Loaded cached split (signature={signature}).")
+                self._save_splits(train, val, test)
+                return train, val, test
         
-        # 3. Perform Split
+        # 2. Perform Split
         train, val, test = self._perform_split(df, stratify_col)
         
-        # 4. Verify Balance
-        self._generate_balance_report(train, val, test, stratify_col, output_dir)
-        self._generate_split_plots(train, val, test, output_dir)
+        # 3. Verify Balance
+        self._generate_balance_report(train, val, test, stratify_col, self.output_dir)
+        self._generate_split_plots(train, val, test, self.output_dir)
+        if self.standard_output_dir != self.output_dir:
+            self._generate_balance_report(train, val, test, stratify_col, self.standard_output_dir)
+            self._generate_split_plots(train, val, test, self.standard_output_dir)
         
-        # 5. Save Splits
-        train.to_excel(output_dir / "train.xlsx", index=False)
-        val.to_excel(output_dir / "val.xlsx", index=False)
-        test.to_excel(output_dir / "test.xlsx", index=False)
+        # 4. Save Splits
+        self._save_splits(train, val, test)
+
+        if self.cache_enabled and signature:
+            self._store_cached_split(signature, train, val, test)
         
         self.logger.info(f"Splits saved: Train={len(train)}, Val={len(val)}, Test={len(test)}")
         
         return train, val, test
+
+    def _compute_signature(self, df: pd.DataFrame) -> Optional[str]:
+        """
+        Build a lightweight hash based on stratification columns to reuse splits for identical data/seeds.
+        """
+        candidate_cols = [c for c in ['combined_bin', 'hs_bin', 'angle_bin'] if c in df.columns]
+        if not candidate_cols:
+            return None
+        hashed = hash_pandas_object(df[candidate_cols], index=True).sum()
+        key = f"{len(df)}_{hashed}"
+        return fingerprint(key)
+
+    def _try_load_cached_split(self, signature: str) -> Optional[Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]:
+        train_p = self.cache_dir / f"{signature}_train.parquet"
+        val_p = self.cache_dir / f"{signature}_val.parquet"
+        test_p = self.cache_dir / f"{signature}_test.parquet"
+        if train_p.exists() and val_p.exists() and test_p.exists():
+            try:
+                return pd.read_parquet(train_p), pd.read_parquet(val_p), pd.read_parquet(test_p)
+            except Exception:
+                return None
+        return None
+
+    def _store_cached_split(self, signature: str, train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFrame) -> None:
+        train.to_parquet(self.cache_dir / f"{signature}_train.parquet", index=True)
+        val.to_parquet(self.cache_dir / f"{signature}_val.parquet", index=True)
+        test.to_parquet(self.cache_dir / f"{signature}_test.parquet", index=True)
+
+    def _save_splits(self, train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFrame) -> None:
+        excel_copy = self.config.get("outputs", {}).get("save_excel_copy", False)
+        save_dataframe(train, self.output_dir / "train.parquet", excel_copy=excel_copy, index=True)
+        save_dataframe(val, self.output_dir / "val.parquet", excel_copy=excel_copy, index=True)
+        save_dataframe(test, self.output_dir / "test.parquet", excel_copy=excel_copy, index=True)
+        if self.standard_output_dir != self.output_dir:
+            save_dataframe(train, self.standard_output_dir / "train.parquet", excel_copy=excel_copy, index=True)
+            save_dataframe(val, self.standard_output_dir / "val.parquet", excel_copy=excel_copy, index=True)
+            save_dataframe(test, self.standard_output_dir / "test.parquet", excel_copy=excel_copy, index=True)
 
     def _determine_stratification_strategy(self, df: pd.DataFrame) -> Optional[str]:
         """
@@ -240,7 +295,8 @@ class SplitEngine:
                 'test%': round(c_test/total, 2)
             })
             
-        pd.DataFrame(report).to_excel(output_dir / "split_balance_report.xlsx", index=False)
+        excel_copy = self.config.get("outputs", {}).get("save_excel_copy", False)
+        save_dataframe(pd.DataFrame(report), output_dir / "split_balance_report.parquet", excel_copy=excel_copy, index=False)
 
     def _generate_split_plots(self, train, val, test, output_dir):
         """Plot Hs and Angle distributions overlaid."""

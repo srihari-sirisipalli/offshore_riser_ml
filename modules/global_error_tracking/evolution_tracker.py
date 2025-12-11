@@ -5,6 +5,8 @@ import json
 import numpy as np
 from pathlib import Path
 from typing import List, Dict, Any
+from utils.file_io import save_dataframe
+from utils import constants
 
 class EvolutionTracker:
     """
@@ -21,12 +23,12 @@ class EvolutionTracker:
         self.config = config
         self.logger = logger
         self.base_dir = Path(config.get('outputs', {}).get('base_results_dir', 'results'))
-        self.tracking_dir = self.base_dir / "01_GLOBAL_TRACKING"
+        self.tracking_dir = self.base_dir / constants.GLOBAL_ERROR_TRACKING_DIR
         
         # Ensure subdirectories exist
-        (self.tracking_dir / "01_metrics").mkdir(parents=True, exist_ok=True)
-        (self.tracking_dir / "02_features").mkdir(parents=True, exist_ok=True)
-        (self.tracking_dir / "04_evolution_plots").mkdir(parents=True, exist_ok=True)
+        (self.tracking_dir / constants.ROUND_METRICS_DIR).mkdir(parents=True, exist_ok=True)
+        (self.tracking_dir / constants.ROUND_FEATURES_DIR).mkdir(parents=True, exist_ok=True)
+        (self.tracking_dir / constants.ROUND_EVOLUTION_PLOTS_DIR).mkdir(parents=True, exist_ok=True)
 
     def update_tracker(self, round_summary: Dict[str, Any]):
         """
@@ -44,6 +46,7 @@ class EvolutionTracker:
         
         # 1. Update Metrics History
         self._update_metrics_history(round_summary)
+        self._write_overfitting_rollup()
         
         # 2. Update Feature Timeline
         self._update_feature_timeline(round_summary)
@@ -55,7 +58,7 @@ class EvolutionTracker:
 
     def _update_metrics_history(self, summary: Dict):
         """Appends row to metrics_all_rounds.xlsx with comprehensive metrics."""
-        file_path = self.tracking_dir / "01_metrics" / "metrics_all_rounds.xlsx"
+        file_path = self.tracking_dir / constants.ROUND_METRICS_DIR / "metrics_all_rounds.parquet"
 
         # Flatten structure
         metrics = summary.get('metrics', {})
@@ -78,14 +81,15 @@ class EvolutionTracker:
             'test_max_error_deg': metrics.get('test_max_error', np.nan),
             'test_acc0': metrics.get('test_accuracy_at_0deg', np.nan),
             'test_acc5': metrics.get('test_accuracy_at_5deg', np.nan),
-            'test_acc10': metrics.get('test_accuracy_at_10deg', np.nan),
-            'timestamp': pd.Timestamp.now().isoformat()
+            'test_acc10': metrics.get('test_accuracy_at_10deg', np.nan)
         }
 
         new_df = pd.DataFrame([row])
 
         if file_path.exists():
-            existing_df = pd.read_excel(file_path)
+            existing_df = pd.read_parquet(file_path)
+            if 'timestamp' in existing_df.columns:
+                existing_df = existing_df.drop(columns=['timestamp'])
 
             # Check if round already exists to avoid duplicates (resume logic)
             if summary['round'] in existing_df['round_number'].values:
@@ -100,11 +104,11 @@ class EvolutionTracker:
         else:
             updated_df = new_df
 
-        updated_df.to_excel(file_path, index=False)
+        save_dataframe(updated_df, file_path, excel_copy=self.config.get("outputs", {}).get("save_excel_copy", False), index=False)
 
     def _update_feature_timeline(self, summary: Dict):
         """Appends to features_eliminated_timeline.xlsx."""
-        file_path = self.tracking_dir / "02_features" / "features_eliminated_timeline.xlsx"
+        file_path = self.tracking_dir / constants.ROUND_FEATURES_DIR / "features_eliminated_timeline.parquet"
         
         # If no feature dropped (e.g. Round 0 start), skip or log 'Start'
         dropped = summary.get('dropped_feature')
@@ -120,7 +124,7 @@ class EvolutionTracker:
         new_df = pd.DataFrame([row])
         
         if file_path.exists():
-            existing_df = pd.read_excel(file_path)
+            existing_df = pd.read_parquet(file_path)
             if summary['round'] in existing_df['round_number'].values:
                 # Only update if feature changed (unlikely in deterministic flow)
                 return 
@@ -128,19 +132,19 @@ class EvolutionTracker:
         else:
             updated_df = new_df
             
-        updated_df.to_excel(file_path, index=False)
+        save_dataframe(updated_df, file_path, excel_copy=self.config.get("outputs", {}).get("save_excel_copy", False), index=False)
 
     def _generate_evolution_plots(self):
         """Regenerates plots based on the current history file."""
-        history_path = self.tracking_dir / "01_metrics" / "metrics_all_rounds.xlsx"
+        history_path = self.tracking_dir / constants.ROUND_METRICS_DIR / "metrics_all_rounds.parquet"
         if not history_path.exists():
             return
 
-        df = pd.read_excel(history_path)
+        df = pd.read_parquet(history_path)
         if len(df) < 2:
             return
 
-        plot_dir = self.tracking_dir / "04_evolution_plots"
+        plot_dir = self.tracking_dir / constants.ROUND_EVOLUTION_PLOTS_DIR
 
         # --- VALIDATION SET PLOTS ---
         # 1. Val CMAE vs Rounds (Lower is better)
@@ -246,3 +250,44 @@ class EvolutionTracker:
         plt.tight_layout()
         plt.savefig(path)
         plt.close()
+
+    def _write_overfitting_rollup(self) -> None:
+        """Persist overfitting/regression rollup based on metrics timeline."""
+        history_path = self.tracking_dir / constants.ROUND_METRICS_DIR / "metrics_all_rounds.parquet"
+        if not history_path.exists():
+            return
+
+        df = pd.read_parquet(history_path).sort_values("round_number")
+        if df.empty or "val_cmae" not in df.columns or "test_cmae" not in df.columns:
+            return
+
+        df["overfit_gap"] = df["val_cmae"] - df["test_cmae"]
+        df["val_regression_flag"] = df["val_cmae"] > df["val_cmae"].shift(1) * 1.05
+        df["test_regression_flag"] = df["test_cmae"] > df["test_cmae"].shift(1) * 1.05
+        df["val_delta"] = df["val_cmae"].diff()
+        df["test_delta"] = df["test_cmae"].diff()
+
+        slope_val = np.nan
+        slope_test = np.nan
+        clean_val = df.dropna(subset=["val_cmae"])
+        clean_test = df.dropna(subset=["test_cmae"])
+        if len(clean_val) > 1:
+            slope_val = np.polyfit(clean_val["round_number"], clean_val["val_cmae"], 1)[0]
+        if len(clean_test) > 1:
+            slope_test = np.polyfit(clean_test["round_number"], clean_test["test_cmae"], 1)[0]
+
+        summary = {
+            "rounds_tracked": int(df["round_number"].nunique()),
+            "latest_round": int(df["round_number"].max()),
+            "latest_val_cmae": float(df["val_cmae"].iloc[-1]),
+            "latest_test_cmae": float(df["test_cmae"].iloc[-1]),
+            "overfit_gap_latest": float(df["overfit_gap"].iloc[-1]),
+            "val_trend_slope": float(slope_val) if not np.isnan(slope_val) else np.nan,
+            "test_trend_slope": float(slope_test) if not np.isnan(slope_test) else np.nan,
+            "regressions_val": int(df["val_regression_flag"].fillna(False).sum()),
+            "regressions_test": int(df["test_regression_flag"].fillna(False).sum()),
+        }
+
+        out_dir = self.tracking_dir / constants.ROUND_METRICS_DIR
+        save_dataframe(df, out_dir / "regression_overfitting_rollup.parquet", excel_copy=self.config.get("outputs", {}).get("save_excel_copy", False), index=False)
+        (out_dir / "regression_overfitting_rollup_summary.json").write_text(json.dumps(summary, indent=2))

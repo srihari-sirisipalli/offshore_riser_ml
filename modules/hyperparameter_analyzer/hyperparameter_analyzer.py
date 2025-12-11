@@ -11,22 +11,26 @@ from scipy.interpolate import griddata
 from mpl_toolkits.mplot3d import Axes3D 
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from contextlib import contextmanager
+from modules.base.base_engine import BaseEngine
+from utils.file_io import save_dataframe
+from utils import constants
 
-class HyperparameterAnalyzer:
+class HyperparameterAnalyzer(BaseEngine):
     """
     Analyzes HPO results with comprehensive visualizations.
     """
     
     def __init__(self, config: dict, logger: logging.Logger):
-        self.config = config
-        self.logger = logger
-        self.output_dir: Path = None
+        super().__init__(config, logger)
         self.optimal_top_percent = config.get('hpo_analysis', {}).get('optimal_top_percent', 10)
         self.highlighting_styles = config.get('hpo_analysis', {}).get('highlighting_styles', ['box', 'stars', 'overlay'])
         self.cv_metrics = ['cv_cmae_deg_mean', 'cv_crmse_deg_mean', 'cv_max_error_deg_mean']
         self.val_metrics = ['val_cmae_deg', 'val_crmse_deg', 'val_max_error_deg']
         self.test_metrics = ['test_cmae_deg', 'test_crmse_deg', 'test_max_error_deg']
         self.primary_metric = 'cv_cmae_deg_mean'
+
+    def _get_engine_directory_name(self) -> str:
+        return constants.HPO_ANALYSIS_DIR
 
     @contextmanager
     def _plot_context(self):
@@ -39,17 +43,16 @@ class HyperparameterAnalyzer:
             sns.set_style(original_seaborn_style)
             plt.close('all')
             
-    def analyze(self, hpo_results_file: Path, analysis_output_dir: Path) -> None:
+    def execute(self, hpo_results_file: Path) -> None:
         """Execute full analysis on HPO results for a specific round."""
         if not hpo_results_file.exists():
             self.logger.warning(f"HPO results file not found at {hpo_results_file}. Skipping analysis.")
             return
 
         self.logger.info(f"Starting Hyperparameter Analysis on {hpo_results_file.name}...")
-        self.output_dir = analysis_output_dir
-        self.output_dir.mkdir(parents=True, exist_ok=True)
         
-        df = pd.read_excel(hpo_results_file)
+        # Parquet-first; fall back to Excel for legacy files
+        df = pd.read_parquet(hpo_results_file) if hpo_results_file.suffix.lower() == ".parquet" else pd.read_excel(hpo_results_file)
         
         available_cv = [m for m in self.cv_metrics if m in df.columns]
         available_val = [m for m in self.val_metrics if m in df.columns]
@@ -99,51 +102,53 @@ class HyperparameterAnalyzer:
         return df_sorted.head(top_n)
 
     def _generate_optimal_ranges_report_multisheet(self, df: pd.DataFrame) -> None:
-        output_file = self.output_dir / "optimal_ranges.xlsx"
-        with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
-            summary_data = []
-            param_cols = [c for c in df.columns if c.startswith('param_')]
-            top_overall = self._get_top_configs(df, self.optimal_top_percent)
+        excel_copy = self.config.get("outputs", {}).get("save_excel_copy", False)
+        output_file = self.output_dir / "optimal_ranges.parquet"
+        summary_data = []
+        param_cols = [c for c in df.columns if c.startswith('param_')]
+        top_overall = self._get_top_configs(df, self.optimal_top_percent)
+        for col in param_cols:
+            clean_name = col.replace('param_', '')
+            unique_vals = top_overall[col].unique()
+            row = {'Parameter': clean_name}
+            if np.issubdtype(top_overall[col].dtype, np.number):
+                row['Type'] = 'Numeric'
+                row['Optimal Min'] = top_overall[col].min()
+                row['Optimal Max'] = top_overall[col].max()
+                row['Best Value'] = top_overall.iloc[0][col]
+            else:
+                row['Type'] = 'Categorical'
+                row['Optimal Values'] = ", ".join(map(str, unique_vals))
+                row['Best Value'] = top_overall.iloc[0][col]
+            summary_data.append(row)
+        summary_df = pd.DataFrame(summary_data)
+        save_dataframe(summary_df, output_file, excel_copy=excel_copy, index=False)
+        
+        models = df['model_name'].unique() if 'model_name' in df.columns else df['model'].unique()
+        for model in models:
+            model_col = 'model_name' if 'model_name' in df.columns else 'model'
+            model_df = df[df[model_col] == model]
+            top_model = self._get_top_configs(model_df, self.optimal_top_percent)
+            model_data = []
             for col in param_cols:
+                if col not in model_df.columns: continue
                 clean_name = col.replace('param_', '')
-                unique_vals = top_overall[col].unique()
+                unique_vals = top_model[col].unique()
                 row = {'Parameter': clean_name}
-                if np.issubdtype(top_overall[col].dtype, np.number):
+                if np.issubdtype(top_model[col].dtype, np.number):
                     row['Type'] = 'Numeric'
-                    row['Optimal Min'] = top_overall[col].min()
-                    row['Optimal Max'] = top_overall[col].max()
-                    row['Best Value'] = top_overall.iloc[0][col]
+                    row['Optimal Min'] = top_model[col].min()
+                    row['Optimal Max'] = top_model[col].max()
+                    row['Best Value'] = top_model.iloc[0][col]
                 else:
                     row['Type'] = 'Categorical'
                     row['Optimal Values'] = ", ".join(map(str, unique_vals))
-                    row['Best Value'] = top_overall.iloc[0][col]
-                summary_data.append(row)
-            pd.DataFrame(summary_data).to_excel(writer, sheet_name='Summary', index=False)
-            
-            models = df['model_name'].unique() if 'model_name' in df.columns else df['model'].unique()
-            for model in models:
-                model_col = 'model_name' if 'model_name' in df.columns else 'model'
-                model_df = df[df[model_col] == model]
-                top_model = self._get_top_configs(model_df, self.optimal_top_percent)
-                model_data = []
-                for col in param_cols:
-                    if col not in model_df.columns: continue
-                    clean_name = col.replace('param_', '')
-                    unique_vals = top_model[col].unique()
-                    row = {'Parameter': clean_name}
-                    if np.issubdtype(top_model[col].dtype, np.number):
-                        row['Type'] = 'Numeric'
-                        row['Optimal Min'] = top_model[col].min()
-                        row['Optimal Max'] = top_model[col].max()
-                        row['Best Value'] = top_model.iloc[0][col]
-                    else:
-                        row['Type'] = 'Categorical'
-                        row['Optimal Values'] = ", ".join(map(str, unique_vals))
-                        row['Best Value'] = top_model.iloc[0][col]
-                    model_data.append(row)
-                sheet_name = model[:31]
-                pd.DataFrame(model_data).to_excel(writer, sheet_name=sheet_name, index=False)
-        self.logger.info(f"Generated multi-sheet optimal ranges: {output_file}")
+                    row['Best Value'] = top_model.iloc[0][col]
+                model_data.append(row)
+            sheet_name = model[:31]
+            model_df_out = pd.DataFrame(model_data)
+            save_dataframe(model_df_out, self.output_dir / f"optimal_ranges_{sheet_name}.parquet", excel_copy=excel_copy, index=False)
+        self.logger.info(f"Generated optimal ranges artifacts (Parquet-first) in {self.output_dir}")
 
     def _generate_summary_report(self, df: pd.DataFrame, cv_metrics: List[str], 
                                  val_metrics: List[str], test_metrics: List[str]) -> None:
@@ -162,8 +167,9 @@ class HyperparameterAnalyzer:
                 if m in best_row: row[f'Best {m}'] = best_row[m]
             summary.append(row)
         summary_df = pd.DataFrame(summary)
-        summary_df.to_excel(self.output_dir / "summary_report.xlsx", index=False)
-        self.logger.info("Generated summary report")
+        excel_copy = self.config.get("outputs", {}).get("save_excel_copy", False)
+        save_dataframe(summary_df, self.output_dir / "summary_report.parquet", excel_copy=excel_copy, index=False)
+        self.logger.info("Generated summary report (Parquet-first)")
 
     def _visualize_model_landscape(self, df: pd.DataFrame, top_df: pd.DataFrame, 
                                    model: str, metric: str, metric_type: str):

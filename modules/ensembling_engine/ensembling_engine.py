@@ -3,22 +3,29 @@ import numpy as np
 import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional
+from modules.base.base_engine import BaseEngine
+from utils.error_handling import handle_engine_errors
+from utils.file_io import save_dataframe
 
 from utils.circular_metrics import reconstruct_angle, wrap_angle
+from utils import constants
 
-class EnsemblingEngine:
+class EnsemblingEngine(BaseEngine):
     """
     Combines predictions from multiple models/runs to improve performance.
     Strategies: Simple Average, Weighted Average, Hs-Sensitive Selection.
     """
     
     def __init__(self, config: dict, logger: logging.Logger):
-        self.config = config
-        self.logger = logger
+        super().__init__(config, logger)
         self.ens_config = config.get('ensembling', {})
         self.enabled = self.ens_config.get('enabled', False)
-        
-    def ensemble(self, 
+
+    def _get_engine_directory_name(self) -> str:
+        return constants.ENSEMBLING_DIR
+
+    @handle_engine_errors("Ensembling")
+    def execute(self, 
                  predictions_list: List[pd.DataFrame], 
                  metrics_list: List[Dict[str, float]], 
                  split_name: str, 
@@ -46,8 +53,7 @@ class EnsemblingEngine:
         self.logger.info(f"Starting Ensembling for {split_name} set with {len(predictions_list)} models...")
         
         # 1. Setup Output Directory
-        base_dir = self.config.get('outputs', {}).get('base_results_dir', 'results')
-        output_dir = Path(base_dir) / "09_ADVANCED_ANALYTICS" / "ensembling"
+        output_dir = self.output_dir / "ensembling"
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # 2. Validate Inputs
@@ -82,8 +88,14 @@ class EnsemblingEngine:
                 ensemble_df[col] = predictions_list[0][col].values
         
         # 5. Save Artifacts
-        save_path = output_dir / f"ensemble_predictions_{split_name}.xlsx"
-        ensemble_df.to_excel(save_path, index=False)
+        excel_copy = self.config.get("outputs", {}).get("save_excel_copy", False)
+        save_path = output_dir / f"ensemble_predictions_{split_name}.parquet"
+        save_dataframe(ensemble_df, save_path, excel_copy=excel_copy, index=False)
+        if self.standard_output_dir != self.output_dir:
+            std_dir = self.standard_output_dir / "ensembling"
+            std_dir.mkdir(parents=True, exist_ok=True)
+            std_path = std_dir / f"ensemble_predictions_{split_name}.parquet"
+            save_dataframe(ensemble_df, std_path, excel_copy=excel_copy, index=False)
         
         self.logger.info(f"Ensembling complete. Saved to {save_path}")
         return ensemble_df

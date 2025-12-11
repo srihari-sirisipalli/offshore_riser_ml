@@ -12,11 +12,17 @@ import gc  # Explicit garbage collection
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Generator
 from joblib import Parallel, delayed
+from tqdm import tqdm  # Progress indicators
 
 from sklearn.model_selection import StratifiedKFold, KFold, ParameterGrid
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, explained_variance_score
 from modules.model_factory import ModelFactory
 from utils.circular_metrics import compute_cmae, compute_crmse, reconstruct_angle
+from modules.base.base_engine import BaseEngine
+from utils.error_handling import handle_engine_errors
+from modules.evaluation_engine.cv_analysis import cv_fold_consistency
+from utils.file_io import save_dataframe
+from utils import constants
 
 # --- Helper: Safe File Locking ---
 @contextlib.contextmanager
@@ -64,7 +70,7 @@ class NumpyEncoder(json.JSONEncoder):
             return obj.tolist()
         return json.JSONEncoder.default(self, obj)
 
-class HPOSearchEngine:
+class HPOSearchEngine(BaseEngine):
     """
     Hyperparameter Optimization Engine.
     
@@ -76,8 +82,7 @@ class HPOSearchEngine:
     """
     
     def __init__(self, config: dict, logger: logging.Logger):
-        self.config = config
-        self.logger = logger
+        super().__init__(config, logger)
         self.hpo_config = config.get('hyperparameters', {})
         self.progress_file: Optional[Path] = None
         self.completed_hashes = set()
@@ -85,6 +90,10 @@ class HPOSearchEngine:
         # Resource Limits (Task 1.2)
         self.max_configs = self.config.get('resources', {}).get('max_hpo_configs', 1000)
 
+    def _get_engine_directory_name(self) -> str:
+        return constants.HPO_OPTIMIZATION_DIR
+
+    @handle_engine_errors("HPO Search")
     def execute(self, train_df: pd.DataFrame, val_df: pd.DataFrame, test_df: pd.DataFrame, run_id: str) -> Dict[str, Any]:
         """
         Execute Grid Search, save snapshots, and generate detailed results.
@@ -106,17 +115,12 @@ class HPOSearchEngine:
 
         self.logger.info("Starting Hyperparameter Optimization (HPO)...")
         
-        # 1. Setup Output Directory
-        base_dir = Path(self.config.get('outputs', {}).get('base_results_dir', 'results'))
-        output_dir = base_dir / "03_HYPERPARAMETER_OPTIMIZATION"
-        output_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Snapshot Directory (Parquet for speed)
-        snapshot_dir = output_dir / "tracking_snapshots"
+        # Directories are now handled by BaseEngine. self.output_dir is available.
+        snapshot_dir = self.output_dir / "tracking_snapshots"
         snapshot_dir.mkdir(parents=True, exist_ok=True)
         
-        progress_dir = output_dir / "progress"
-        results_dir = output_dir / "results"
+        progress_dir = self.output_dir / "progress"
+        results_dir = self.output_dir / "results"
         progress_dir.mkdir(parents=True, exist_ok=True)
         results_dir.mkdir(parents=True, exist_ok=True)
         
@@ -147,77 +151,192 @@ class HPOSearchEngine:
         grids = self.hpo_config.get('grids', {})
         config_counter = 0
         total_configs_processed = 0
-        
+
+        # Check if we should parallelize across configurations
+        parallel_configs = self.config.get('execution', {}).get('parallel_hpo_configs', False)
+        n_jobs_configs = self.config['execution'].get('n_jobs', -1)
+
+        # If parallelizing configs, limit CV fold parallelization to avoid over-committing
+        if parallel_configs and n_jobs_configs != 1:
+            # Reserve cores for config-level parallelization
+            self.logger.info("Parallel HPO across configurations enabled. Limiting CV fold parallelization.")
+            cv_n_jobs = 1  # Sequential CV folds when parallelizing configs
+        else:
+            cv_n_jobs = n_jobs_configs  # Full parallelization for CV folds
+
         for model_name, param_grid in grids.items():
             self.logger.info(f"Expanding grid for {model_name}...")
             combinations = list(ParameterGrid(param_grid))
-            
-            for params in combinations:
-                config_counter += 1
-                
-                # Check limits
-                if config_counter > self.max_configs:
-                    self.logger.warning(f"Max HPO configs ({self.max_configs}) reached. Stopping search early.")
-                    break
 
-                # Deterministic hash for resume
+            # Filter out already-completed configurations
+            pending_combinations = []
+            for params in combinations:
                 config_signature = json.dumps({'model': model_name, 'params': params}, sort_keys=True, cls=NumpyEncoder)
                 config_hash = hashlib.md5(config_signature.encode()).hexdigest()
-                
-                if config_hash in self.completed_hashes:
-                    continue
-                
-                try:
-                    # A. CV Evaluation
-                    cv_results = self._evaluate_config_cv(model_name, params, X_train, y_train, stratify_col)
-                    
-                    # B. Final Train & Snapshot
-                    # Only train final model if CV didn't fail spectacularly
-                    model = ModelFactory.create(model_name, params)
-                    model.fit(X_train, y_train)
-                    
-                    # C. Val Snapshot
-                    preds_val = model.predict(X_val)
-                    val_metrics = self._calculate_metrics_with_prefix(y_val, preds_val, prefix="val")
-                    self._save_snapshot_parquet(snapshot_dir, config_counter, "val", val_df.index, y_val, preds_val)
-                    
-                    # D. Test Snapshot
-                    preds_test = model.predict(X_test)
-                    test_metrics = self._calculate_metrics_with_prefix(y_test, preds_test, prefix="test")
-                    self._save_snapshot_parquet(snapshot_dir, config_counter, "test", test_df.index, y_test, preds_test)
-                    
-                    status = "success"
-                    
-                except Exception as e:
-                    self.logger.error(f"HPO Failed for {model_name} {params}: {str(e)}")
-                    cv_results = {}
-                    val_metrics = {}
-                    test_metrics = {}
-                    status = "failed"
+                if config_hash not in self.completed_hashes:
+                    pending_combinations.append((params, config_hash))
 
-                # Prepare Result Entry
-                result_entry = {
-                    'config_id': config_counter,
-                    'config_hash': config_hash,
-                    'model_name': model_name,
-                    'status': status,
-                    'timestamp': datetime.datetime.now().isoformat(),
-                    'params': params, 
-                    **cv_results,
-                    **val_metrics,
-                    **test_metrics
-                }
-                
-                self._save_progress(result_entry)
-                total_configs_processed += 1
-                
-                # Memory Management (Issue #P1)
-                # Force cleanup after every iteration
-                del model, preds_val, preds_test
-                gc.collect()
-                
-                if total_configs_processed % 10 == 0:
-                    self.logger.info(f"Processed {total_configs_processed} configs...")
+            self.logger.info(f"Found {len(pending_combinations)} pending configurations (out of {len(combinations)} total)")
+
+            if not pending_combinations:
+                self.logger.info(f"All configurations for {model_name} already completed. Skipping.")
+                continue
+
+            # Check limits
+            if config_counter + len(pending_combinations) > self.max_configs:
+                num_to_run = max(0, self.max_configs - config_counter)
+                self.logger.warning(f"Max HPO configs ({self.max_configs}) limit reached. Running only {num_to_run} configurations.")
+                pending_combinations = pending_combinations[:num_to_run]
+
+            # Parallel or sequential execution based on config
+            if parallel_configs and len(pending_combinations) > 1:
+                self.logger.info(f"Parallel mode: Evaluating {len(pending_combinations)} configs with n_jobs={n_jobs_configs}")
+
+                # Parallel evaluation function
+                def evaluate_config_parallel(params_hash_tuple, config_id):
+                    params, config_hash = params_hash_tuple
+                    try:
+                        # A. CV Evaluation (sequential folds due to config parallelization)
+                        cv_results = self._evaluate_config_cv(
+                            model_name, params, X_train, y_train, stratify_col, n_jobs_override=cv_n_jobs
+                        )
+
+                        # Save fold-level metrics
+                        fold_consistency = cv_results.pop("fold_metrics", None)
+                        if fold_consistency is not None:
+                            save_dataframe(
+                                fold_consistency,
+                                results_dir / f"cv_consistency_{model_name}_{config_id:04d}.parquet",
+                                excel_copy=self.config.get("outputs", {}).get("save_excel_copy", False),
+                                index=False,
+                            )
+
+                        # B. Final Train & Snapshot
+                        model = ModelFactory.create(model_name, params)
+                        model.fit(X_train, y_train)
+
+                        # C. Val Snapshot
+                        preds_val = model.predict(X_val)
+                        val_metrics = self._calculate_metrics_with_prefix(y_val, preds_val, prefix="val")
+                        self._save_snapshot_parquet(snapshot_dir, config_id, "val", val_df.index, y_val, preds_val)
+
+                        # D. Test Snapshot
+                        preds_test = model.predict(X_test)
+                        test_metrics = self._calculate_metrics_with_prefix(y_test, preds_test, prefix="test")
+                        self._save_snapshot_parquet(snapshot_dir, config_id, "test", test_df.index, y_test, preds_test)
+
+                        status = "success"
+
+                        # Cleanup
+                        del model, preds_val, preds_test
+                        gc.collect()
+
+                        return {
+                            'config_id': config_id,
+                            'config_hash': config_hash,
+                            'model_name': model_name,
+                            'status': status,
+                            'timestamp': datetime.datetime.now().isoformat(),
+                            'params': params,
+                            **cv_results,
+                            **val_metrics,
+                            **test_metrics
+                        }
+
+                    except Exception as e:
+                        self.logger.error(f"HPO Failed for {model_name} {params}: {str(e)}")
+                        return {
+                            'config_id': config_id,
+                            'config_hash': config_hash,
+                            'model_name': model_name,
+                            'status': "failed",
+                            'timestamp': datetime.datetime.now().isoformat(),
+                            'params': params,
+                        }
+
+                # Execute in parallel
+                config_ids = range(config_counter + 1, config_counter + 1 + len(pending_combinations))
+                results = Parallel(n_jobs=n_jobs_configs, verbose=10)(
+                    delayed(evaluate_config_parallel)(combo, cid)
+                    for combo, cid in zip(pending_combinations, config_ids)
+                )
+
+                # Save results
+                for result_entry in results:
+                    self._save_progress(result_entry)
+                    total_configs_processed += 1
+
+                config_counter += len(pending_combinations)
+
+            else:
+                # Sequential mode (original implementation)
+                self.logger.info(f"Sequential mode: Evaluating {len(pending_combinations)} configs")
+
+                # Progress bar for HPO configurations
+                with tqdm(total=len(pending_combinations), desc=f"HPO {model_name}", unit="config") as pbar:
+                    for params, config_hash in pending_combinations:
+                        config_counter += 1
+
+                        try:
+                            # A. CV Evaluation
+                            cv_results = self._evaluate_config_cv(
+                                model_name, params, X_train, y_train, stratify_col, n_jobs_override=cv_n_jobs
+                            )
+
+                            # Save fold-level metrics for consistency analysis
+                            fold_consistency = cv_results.pop("fold_metrics", None)
+                            if fold_consistency is not None:
+                                save_dataframe(
+                                    fold_consistency,
+                                    results_dir / f"cv_consistency_{model_name}_{config_counter:04d}.parquet",
+                                    excel_copy=self.config.get("outputs", {}).get("save_excel_copy", False),
+                                    index=False,
+                                )
+
+                            # B. Final Train & Snapshot
+                            model = ModelFactory.create(model_name, params)
+                            model.fit(X_train, y_train)
+
+                            # C. Val Snapshot
+                            preds_val = model.predict(X_val)
+                            val_metrics = self._calculate_metrics_with_prefix(y_val, preds_val, prefix="val")
+                            self._save_snapshot_parquet(snapshot_dir, config_counter, "val", val_df.index, y_val, preds_val)
+
+                            # D. Test Snapshot
+                            preds_test = model.predict(X_test)
+                            test_metrics = self._calculate_metrics_with_prefix(y_test, preds_test, prefix="test")
+                            self._save_snapshot_parquet(snapshot_dir, config_counter, "test", test_df.index, y_test, preds_test)
+
+                            status = "success"
+
+                        except Exception as e:
+                            self.logger.error(f"HPO Failed for {model_name} {params}: {str(e)}")
+                            cv_results = {}
+                            val_metrics = {}
+                            test_metrics = {}
+                            status = "failed"
+
+                        # Prepare Result Entry
+                        result_entry = {
+                            'config_id': config_counter,
+                            'config_hash': config_hash,
+                            'model_name': model_name,
+                            'status': status,
+                            'timestamp': datetime.datetime.now().isoformat(),
+                            'params': params,
+                            **cv_results,
+                            **val_metrics,
+                            **test_metrics
+                        }
+
+                        self._save_progress(result_entry)
+                        total_configs_processed += 1
+                        pbar.update(1)  # Update progress bar
+
+                        # Memory Management (Issue #P1)
+                        # Force cleanup after every iteration
+                        del model, preds_val, preds_test
+                        gc.collect()
 
         # 5. Finalize Results (Streaming Read)
         return self._finalize_results(results_dir)
@@ -250,7 +369,7 @@ class HPOSearchEngine:
         except Exception as e:
             self.logger.warning(f"Failed to save snapshot for trial {trial_id} ({split_name}): {e}")
 
-    def _evaluate_config_cv(self, model_name: str, params: dict, X, y, stratify_col) -> dict:
+    def _evaluate_config_cv(self, model_name: str, params: dict, X, y, stratify_col, n_jobs_override=None) -> dict:
         """Perform K-Fold CV."""
         n_splits = self.hpo_config.get('cv_folds', 5)
         
@@ -263,9 +382,10 @@ class HPOSearchEngine:
             stratify_col = None 
 
         splits = list(cv.split(X, stratify_col)) if stratify_col is not None else list(cv.split(X))
-        
+
         # Parallel Execution for Folds
-        n_jobs = self.config['execution'].get('n_jobs', -1)
+        # Use override if provided (to avoid over-parallelization when configs are parallel)
+        n_jobs = n_jobs_override if n_jobs_override is not None else self.config['execution'].get('n_jobs', -1)
         
         fold_results = Parallel(n_jobs=n_jobs)(
             delayed(self._run_single_fold)(model_name, params, X, y, train_idx, val_idx, i)
@@ -288,6 +408,7 @@ class HPOSearchEngine:
                 if len(parts) > 2:
                     metric_bases.add('_'.join(parts[2:]))
 
+        fold_metrics = {}
         for base in metric_bases:
             values = []
             for res in fold_results:
@@ -299,7 +420,9 @@ class HPOSearchEngine:
             if values:
                 aggregated[f'cv_{base}_mean'] = np.mean(values)
                 aggregated[f'cv_{base}_std'] = np.std(values)
-                
+                fold_metrics[base] = np.array(values)
+
+        aggregated["fold_metrics"] = cv_fold_consistency(fold_metrics) if fold_metrics else None
         return aggregated
 
     def _run_single_fold(self, model_name, params, X, y, train_idx, val_idx, fold_idx):
@@ -390,24 +513,49 @@ class HPOSearchEngine:
                 except:
                     continue
                     
-        # 2. Save Summary (using Pandas in chunks if massive, or full if reasonable)
-        # For typical HPO (<10k rows), loading into DF is fine for the summary file.
-        # If >100k, we would need chunked writing.
+        # 2. Save Summary (using Pandas in chunks - truly streaming)
+        # Memory-efficient: Write parquet first in append mode, optional Excel copy if enabled
         try:
-            # We assume the summary fits in memory (metadata only, no predictions)
-            # Use chunks if worried
-            chunks = []
             chunk_size = 5000
-            
+            parquet_path = output_dir / "all_configurations.parquet"
+            excel_copy = self.config.get("outputs", {}).get("save_excel_copy", False)
+
+            # First pass: Write to Parquet in chunks (memory-efficient)
+            total_rows = 0
+            first_chunk = True
+
+            # Use pyarrow for efficient append (doesn't reload entire file)
+            import pyarrow as pa
+            import pyarrow.parquet as pq
+
             with pd.read_json(self.progress_file, lines=True, chunksize=chunk_size) as reader:
                 for chunk in reader:
-                    chunks.append(chunk)
-            
-            if chunks:
-                full_df = pd.concat(chunks, ignore_index=True)
-                full_df.to_excel(output_dir / "all_configurations.xlsx", index=False)
-                # Also save parquet for internal use
-                full_df.to_parquet(output_dir / "all_configurations.parquet", index=False)
+                    total_rows += len(chunk)
+                    table = pa.Table.from_pandas(chunk)
+
+                    # Write chunk to Parquet (append mode after first chunk)
+                    if first_chunk:
+                        pq.write_table(table, parquet_path)
+                        first_chunk = False
+                    else:
+                        # Efficient append using pyarrow (doesn't read entire file)
+                        pq.write_table(table, parquet_path, append=True)
+
+                    del table
+                    gc.collect()
+
+            self.logger.info(f"Saved {total_rows} HPO configurations to Parquet.")
+
+            # Only create Excel copy if requested and dataset is reasonably small (<10K rows)
+            if excel_copy and total_rows <= 10000:
+                full_df = pd.read_parquet(parquet_path)
+                save_dataframe(full_df, output_dir / "all_configurations.parquet", excel_copy=True, index=False)
+                self.logger.info(f"Created Excel summary with {total_rows} configurations (excel copy enabled).")
+                del full_df
+                gc.collect()
+            elif excel_copy:
+                self.logger.warning(f"Too many configurations ({total_rows}) for Excel. Use Parquet file instead.")
+
         except Exception as e:
             self.logger.error(f"Failed to compile final results file: {e}")
 
@@ -415,6 +563,7 @@ class HPOSearchEngine:
         if best_config:
             formatted_best = {
                 'model': best_config.get('model_name'),
+                'config_id': best_config.get('config_id'),
                 'params': best_config.get('params'),
                 'metrics': {
                     'cv_cmae': best_config.get('cv_cmae_deg_mean'),

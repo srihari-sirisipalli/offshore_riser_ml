@@ -6,18 +6,25 @@ from typing import Any
 
 from utils.circular_metrics import reconstruct_angle, wrap_angle
 from utils.exceptions import PredictionError
+from modules.base.base_engine import BaseEngine
+from utils.error_handling import handle_engine_errors
+from utils.file_io import save_dataframe
+from utils import constants
 
-class PredictionEngine:
+class PredictionEngine(BaseEngine):
     """
     Generates predictions using a trained model and computes component-wise errors.
     Ensures feature consistency between training and inference.
     """
     
     def __init__(self, config: dict, logger: logging.Logger):
-        self.config = config
-        self.logger = logger
+        super().__init__(config, logger)
         
-    def predict(self, model: Any, data_df: pd.DataFrame, split_name: str, run_id: str) -> pd.DataFrame:
+    def _get_engine_directory_name(self) -> str:
+        return constants.PREDICTIONS_DIR
+
+    @handle_engine_errors("Prediction")
+    def execute(self, model: Any, data_df: pd.DataFrame, split_name: str, run_id: str) -> pd.DataFrame:
         """
         Generate predictions and error metrics.
         
@@ -32,12 +39,7 @@ class PredictionEngine:
         """
         self.logger.info(f"Generating predictions for {split_name} set ({len(data_df)} samples)...")
         
-        # 1. Setup Output Directory
-        base_dir = self.config.get('outputs', {}).get('base_results_dir', 'results')
-        output_dir = Path(base_dir) / "06_PREDICTIONS"
-        output_dir.mkdir(parents=True, exist_ok=True)
-        
-        # 2. Feature Preparation
+        # 1. Feature Preparation
         drop_cols_config = self.config['data'].get('drop_columns', [])
         targets = [self.config['data']['target_sin'], self.config['data']['target_cos']]
         meta_cols = ['angle_deg', 'angle_bin', 'hs_bin', 'combined_bin']
@@ -45,7 +47,7 @@ class PredictionEngine:
         exclude_cols = set(drop_cols_config + targets + meta_cols)
         
         features = [c for c in data_df.columns if c not in exclude_cols]
-        X = data_df[features].copy()
+        X = data_df[features]
         
         if hasattr(model, 'feature_names_in_'):
             model_features = list(model.feature_names_in_)
@@ -59,14 +61,14 @@ class PredictionEngine:
                 "Cannot guarantee feature order consistency for prediction."
             )
         
-        # 3. Predict
+        # 2. Predict
         try:
             preds = model.predict(X)
         except Exception as e:
             self.logger.error(f"Prediction failed for {split_name}: {e}")
             raise PredictionError(f"Prediction failed for {split_name}: {e}") from e
 
-        # 4. Process Results
+        # 3. Process Results
         true_sin = data_df[targets[0]].values
         true_cos = data_df[targets[1]].values
         
@@ -93,15 +95,19 @@ class PredictionEngine:
         hs_col = self.config['data'].get('hs_column')
         if hs_col and hs_col in data_df.columns:
             results_df[hs_col] = data_df[hs_col]
+            # Convert meters to feet for downstream analysis and add a short alias
+            results_df[f"{hs_col}_ft"] = data_df[hs_col] * 3.28084
+            results_df["Hs_ft"] = results_df[f"{hs_col}_ft"]
         if 'hs_bin' in data_df.columns:
             results_df['hs_bin'] = data_df['hs_bin']
             
         results_df.attrs['split'] = split_name
         
-        # 6. Save
+        # 4. Save
         if self.config['outputs'].get('save_predictions', True):
-            save_path = output_dir / f"predictions_{split_name}.xlsx"
-            results_df.to_excel(save_path, index=False)
+            excel_copy = self.config.get('outputs', {}).get('save_excel_copy', False)
+            save_path = self.output_dir / f"predictions_{split_name}.parquet"
+            save_dataframe(results_df, save_path, excel_copy=excel_copy, index=False)
             self.logger.info(f"Predictions saved to {save_path}")
             
         return results_df

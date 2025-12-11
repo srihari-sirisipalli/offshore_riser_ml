@@ -1,10 +1,13 @@
+import matplotlib
+matplotlib.use("Agg")  # Ensure non-interactive backend for thread safety
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
 import logging
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Callable, Tuple
+from joblib import Parallel, delayed
 
 class RFEVisualizer:
     """
@@ -22,12 +25,42 @@ class RFEVisualizer:
         
         # Style settings
         sns.set_theme(style="whitegrid")
+        vis_config = config.get('visualization', {})
+        self.parallel = vis_config.get('parallel_plots', False)
+        self.n_jobs = config.get('execution', {}).get('n_jobs', -1)
         self.colors = {
             'baseline': '#1f77b4',  # Blue
             'dropped': '#d62728',   # Red
             'improvement': '#2ca02c', # Green
             'degradation': '#ff7f0e'  # Orange
         }
+
+    def _run_tasks(self, tasks: List[Tuple[str, Callable[[], None]]]) -> None:
+        """
+        Execute plotting tasks in parallel (threaded) or sequentially depending on config.
+        """
+        if not tasks:
+            return
+
+        def _safe_task(name: str, fn: Callable[[], None]) -> str:
+            try:
+                plt.switch_backend('Agg')
+                fn()
+                return f"Success:{name}"
+            except Exception as exc:  # noqa: BLE001
+                self.logger.warning(f"Failed plot '{name}': {exc}")
+                return f"Failed:{name}"
+
+        if self.parallel and len(tasks) > 1:
+            results = Parallel(n_jobs=self.n_jobs, backend="threading")(
+                delayed(_safe_task)(name, fn) for name, fn in tasks
+            )
+        else:
+            results = [_safe_task(name, fn) for name, fn in tasks]
+
+        failures = [r for r in results if r.startswith("Failed")]
+        if failures:
+            self.logger.warning(f"{len(failures)} visualization task(s) failed: {failures}")
 
     def visualize_lofo_impact(self, round_dir: Path, lofo_results: List[Dict]):
         """
@@ -41,31 +74,30 @@ class RFEVisualizer:
             return
 
         df = pd.DataFrame(lofo_results)
-        
-        # 1. LOFO Comparison Bar Chart (Delta CMAE)
-        # We sort by Delta CMAE. 
-        # Negative Delta = Error Decreased (Good) -> Feature was harmful.
-        # Positive Delta = Error Increased (Bad) -> Feature was helpful.
-        df_sorted = df.sort_values('delta_cmae')
-        
-        plt.figure(figsize=(12, 8))
-        
-        # Color coding: Green if delta < 0 (Improvement), Red if delta > 0 (Degradation)
-        colors = df_sorted['delta_cmae'].apply(
-            lambda x: self.colors['improvement'] if x < 0 else self.colors['degradation']
-        )
-        
-        sns.barplot(x='delta_cmae', y='feature', data=df_sorted, hue='feature', palette=colors.tolist(), legend=False)
-        
-        plt.axvline(0, color='black', linewidth=1)
-        plt.title(f"LOFO Impact: Change in CMAE when feature is removed\n(Negative = Improvement)")
-        plt.xlabel("Delta CMAE (degrees)")
-        plt.ylabel("Feature")
-        
-        self._save_and_close(output_dir / "lofo_comparison_bar.png")
+        tasks: List[Tuple[str, Callable[[], None]]] = []
 
-        # 2. LOFO Error Heatmap (Metrics Matrix) - Val and Test
-        # Check what metrics are available
+        def _task_lofo_bar():
+            # Negative Delta = Error Decreased (Good) -> Feature was harmful.
+            # Positive Delta = Error Increased (Bad) -> Feature was helpful.
+            df_sorted = df.sort_values('delta_cmae')
+
+            plt.figure(figsize=(12, 8))
+
+            colors = df_sorted['delta_cmae'].apply(
+                lambda x: self.colors['improvement'] if x < 0 else self.colors['degradation']
+            )
+
+            sns.barplot(x='delta_cmae', y='feature', data=df_sorted, hue='feature', palette=colors.tolist(), legend=False)
+
+            plt.axvline(0, color='black', linewidth=1)
+            plt.title("LOFO Impact: Change in CMAE when feature is removed\n(Negative = Improvement)")
+            plt.xlabel("Delta CMAE (degrees)")
+            plt.ylabel("Feature")
+
+            self._save_and_close(output_dir / "lofo_comparison_bar.png")
+
+        tasks.append(("lofo_bar", _task_lofo_bar))
+
         val_metrics = ['val_cmae', 'val_crmse', 'val_max_error']
         test_metrics = ['test_cmae', 'test_crmse', 'test_max_error']
 
@@ -73,26 +105,42 @@ class RFEVisualizer:
         available_test = [m for m in test_metrics if m in df.columns]
 
         if available_val:
-            plt.figure(figsize=(10, len(df) * 0.4 + 2))
+            def _task_val_heatmap():
+                plt.figure(figsize=(10, len(df) * 0.4 + 2))
 
-            # Normalize columns to 0-1 range for color scale
-            heatmap_data = df.set_index('feature')[available_val]
-            normalized_data = (heatmap_data - heatmap_data.min()) / (heatmap_data.max() - heatmap_data.min())
+                heatmap_data = df.set_index('feature')[available_val]
+                if len(heatmap_data) > 1:
+                    range_ = heatmap_data.max() - heatmap_data.min()
+                    range_[range_ == 0] = 1
+                    normalized_data = (heatmap_data - heatmap_data.min()) / range_
+                else:
+                    normalized_data = heatmap_data
 
-            sns.heatmap(normalized_data, annot=heatmap_data, fmt=".3f", cmap="viridis_r")
-            plt.title("LOFO Metrics Heatmap (Validation Set)")
-            self._save_and_close(output_dir / "lofo_val_metrics_heatmap.png")
+                sns.heatmap(normalized_data, annot=heatmap_data, fmt=".3f", cmap="viridis_r")
+                plt.title("LOFO Metrics Heatmap (Validation Set)")
+                self._save_and_close(output_dir / "lofo_val_metrics_heatmap.png")
+
+            tasks.append(("lofo_val_heatmap", _task_val_heatmap))
 
         if available_test:
-            plt.figure(figsize=(10, len(df) * 0.4 + 2))
+            def _task_test_heatmap():
+                plt.figure(figsize=(10, len(df) * 0.4 + 2))
 
-            # Normalize columns to 0-1 range for color scale
-            heatmap_data = df.set_index('feature')[available_test]
-            normalized_data = (heatmap_data - heatmap_data.min()) / (heatmap_data.max() - heatmap_data.min())
+                heatmap_data = df.set_index('feature')[available_test]
+                if len(heatmap_data) > 1:
+                    range_ = heatmap_data.max() - heatmap_data.min()
+                    range_[range_ == 0] = 1
+                    normalized_data = (heatmap_data - heatmap_data.min()) / range_
+                else:
+                    normalized_data = heatmap_data
 
-            sns.heatmap(normalized_data, annot=heatmap_data, fmt=".3f", cmap="viridis_r")
-            plt.title("LOFO Metrics Heatmap (Test Set)")
-            self._save_and_close(output_dir / "lofo_test_metrics_heatmap.png")
+                sns.heatmap(normalized_data, annot=heatmap_data, fmt=".3f", cmap="viridis_r")
+                plt.title("LOFO Metrics Heatmap (Test Set)")
+                self._save_and_close(output_dir / "lofo_test_metrics_heatmap.png")
+
+            tasks.append(("lofo_test_heatmap", _task_test_heatmap))
+
+        self._run_tasks(tasks)
 
     def visualize_comparison(self,
                              round_dir: Path,
@@ -113,20 +161,32 @@ class RFEVisualizer:
         base = baseline_preds.loc[common_idx]
         drop = dropped_preds.loc[common_idx]
 
-        # 1. Comprehensive Metrics Bar Charts (NEW!)
+        tasks: List[Tuple[str, Callable[[], None]]] = []
+
         if baseline_metrics and dropped_metrics:
-            self._plot_comprehensive_metrics_comparison(
-                baseline_metrics, dropped_metrics, feature_name, output_dir
-            )
+            tasks.append((
+                "metrics_comparison",
+                lambda: self._plot_comprehensive_metrics_comparison(
+                    baseline_metrics, dropped_metrics, feature_name, output_dir
+                ),
+            ))
 
-        # 2. Error CDF Overlay
-        self._plot_cdf_overlay(base['abs_error'], drop['abs_error'], feature_name, output_dir)
+        tasks.append((
+            "cdf_overlay",
+            lambda: self._plot_cdf_overlay(base['abs_error'], drop['abs_error'], feature_name, output_dir),
+        ))
 
-        # 3. Scatter Overlay (Predicted Angle)
-        self._plot_scatter_overlay(base, drop, feature_name, output_dir)
+        tasks.append((
+            "scatter_overlay",
+            lambda: self._plot_scatter_overlay(base, drop, feature_name, output_dir),
+        ))
 
-        # 4. Residual Distribution Overlay
-        self._plot_residual_dist_overlay(base['error'], drop['error'], feature_name, output_dir)
+        tasks.append((
+            "residual_distribution_overlay",
+            lambda: self._plot_residual_dist_overlay(base['error'], drop['error'], feature_name, output_dir),
+        ))
+
+        self._run_tasks(tasks)
 
     def _plot_cdf_overlay(self, err_base, err_drop, fname, output_dir):
         """Plots cumulative distribution function of absolute errors."""

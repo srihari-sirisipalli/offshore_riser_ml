@@ -10,20 +10,24 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
 from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle, 
+    SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle,
     PageBreak, KeepTogether, ListFlowable, ListItem
 )
+from modules.base.base_engine import BaseEngine
+from utils import constants
 
-class ReportingEngine:
+class ReportingEngine(BaseEngine):
     """
     Advanced Reporting Engine.
     Generates structured, multi-document PDF reports with smart layouts (grids) 
     and automated narrative analysis.
     """
     def __init__(self, config: dict, logger: logging.Logger):
-        self.config = config
-        self.logger = logger
+        super().__init__(config, logger)
         self._init_styles()
+
+    def _get_engine_directory_name(self) -> str:
+        return constants.REPORTING_DIR
         
     def _init_styles(self):
         """Initialize professional report styles."""
@@ -80,7 +84,7 @@ class ReportingEngine:
             spaceAfter=12
         )
 
-    def generate_report(self, report_data: Dict[str, Any], run_id: str) -> str:
+    def execute(self, report_data: Dict[str, Any], run_id: str) -> str:
         """
         Orchestrates the generation of multiple report files.
         Returns the path to the primary Executive Summary.
@@ -91,16 +95,12 @@ class ReportingEngine:
 
         self.logger.info("Starting Report Generation Phase...")
         
-        base_dir = self.config.get('outputs', {}).get('base_results_dir', 'results')
-        output_dir = Path(base_dir) / "12_REPORTING"
-        output_dir.mkdir(parents=True, exist_ok=True)
-        
         # 1. Generate Executive Summary (High Level)
-        exec_path = output_dir / f"final_report.pdf"
+        exec_path = self.output_dir / f"final_report.pdf"
         self._build_executive_summary(exec_path, report_data, run_id)
         
         # 2. Generate Technical Deep Dive (Full Details)
-        tech_path = output_dir / f"02_Technical_Deep_Dive_{run_id}.pdf"
+        tech_path = self.output_dir / f"02_Technical_Deep_Dive_{run_id}.pdf"
         self._build_technical_report(tech_path, report_data, run_id)
         
         return str(exec_path)

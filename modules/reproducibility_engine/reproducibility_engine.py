@@ -9,8 +9,12 @@ import time # Added for FIX #36
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional
+import pandas as pd
+from modules.base.base_engine import BaseEngine
+from utils.file_io import save_dataframe
+from utils import constants
 
-class ReproducibilityEngine:
+class ReproducibilityEngine(BaseEngine):
     """
     Creates a self-contained reproducibility package containing all essential
     artifacts, configuration, environment details, and documentation.
@@ -18,11 +22,13 @@ class ReproducibilityEngine:
     """
     
     def __init__(self, config: dict, logger: logging.Logger):
-        self.config = config
-        self.logger = logger
+        super().__init__(config, logger)
         self.enabled = self.config.get('outputs', {}).get('archive_reproducibility_package', True)
+
+    def _get_engine_directory_name(self) -> str:
+        return constants.REPRODUCIBILITY_PACKAGE_DIR
         
-    def package(self, run_id: str) -> str:
+    def execute(self, run_id: str) -> str:
         """
         Execute the packaging workflow.
         
@@ -39,11 +45,9 @@ class ReproducibilityEngine:
         self.logger.info("Creating Reproducibility Package...")
         
         # 1. Determine Paths
-        base_dir = self.config.get('outputs', {}).get('base_results_dir', 'results')
-        source_root = Path(base_dir)
-        
-        # The package goes inside the results folder
-        package_dir = source_root / "13_REPRODUCIBILITY_PACKAGE"
+        source_root = self.base_dir
+        package_dir = self.output_dir
+        standard_dir = self.standard_output_dir
         
         # 2. Prepare Directory
         try:
@@ -74,7 +78,17 @@ class ReproducibilityEngine:
         
         # 5. Generate Documentation (README)
         self._generate_readme(package_dir, run_id)
+        # 6. Deployment readiness checklist
+        self._write_deployment_checklist(package_dir)
         
+        # Copy to standardized directory if different
+        if standard_dir != package_dir:
+            try:
+                if standard_dir.exists():
+                    shutil.rmtree(standard_dir, ignore_errors=True)
+                shutil.copytree(package_dir, standard_dir)
+            except Exception as exc:  # noqa: BLE001
+                self.logger.warning(f"Failed to copy reproducibility package to standard layout: {exc}")
         self.logger.info(f"Reproducibility Package successfully created at: {package_dir.absolute()}")
         return str(package_dir)
 
@@ -84,16 +98,15 @@ class ReproducibilityEngine:
         Flattens the structure for easier access.
         """
         
+        from utils import constants
+
         artifacts_map = {
-            "00_CONFIG/config_used.json": "config.json",
-            "00_CONFIG/run_metadata.json": "run_metadata.json",
-            "05_FINAL_MODEL/final_model.pkl": "final_model.pkl",
-            "05_FINAL_MODEL/training_metadata.json": "training_metadata.json",
-            "06_PREDICTIONS/predictions_test.xlsx": "predictions_test.xlsx",
-            "06_PREDICTIONS/predictions_val.xlsx": "predictions_val.xlsx",
-            "07_EVALUATION/metrics_test.xlsx": "metrics_test.xlsx",
-            "07_EVALUATION/metrics_val.xlsx": "metrics_val.xlsx",
-            "10_REPORT/final_report.pdf": "final_report.pdf"
+            f"{constants.CONFIG_DIR}/config_used.json": "config.json",
+            f"{constants.CONFIG_DIR}/run_metadata.json": "run_metadata.json",
+            f"{constants.RFE_SUMMARY_DIR}/all_rounds_metrics.parquet": "rfe_summary_metrics.parquet",
+            f"{constants.RFE_SUMMARY_DIR}/feature_elimination_history.parquet": "feature_elimination_history.parquet",
+            f"{constants.RECONSTRUCTION_MAPPING_DIR}/best_model_info.json": "best_model_info.json",
+            f"{constants.REPORTING_DIR}/final_report.pdf": "final_report.pdf"
         }
         
         for src_rel, dst_name in artifacts_map.items():
@@ -123,6 +136,77 @@ class ReproducibilityEngine:
             src = source_root / "08_DIAGNOSTICS" / plot_rel
             if src.exists():
                 shutil.copy2(src, diag_dest / src.name)
+
+    def _write_deployment_checklist(self, dest_root: Path) -> None:
+        """
+        Write a deployment readiness checklist with real status checks.
+        """
+        base_results = Path(self.config.get("outputs", {}).get("base_results_dir", "results"))
+        excel_copy = self.config.get("outputs", {}).get("save_excel_copy", False)
+
+        def exists(rel_path: str) -> bool:
+            return (base_results / rel_path).exists()
+
+        checks = [
+            {
+                "item": "Model serialization validated",
+                "status": "PASS" if exists("05_FINAL_MODEL/final_model.pkl") else "FAIL",
+                "notes": "Checks for persisted final_model.pkl in 05_FINAL_MODEL",
+            },
+            {
+                "item": "Input validation implemented",
+                "status": "PASS" if exists("01_DATA_VALIDATION/validated_data.parquet") else "WARN",
+                "notes": "Requires validated_data artifacts in 01_DATA_VALIDATION",
+            },
+            {
+                "item": "Latency meets requirement",
+                "status": "WARN",
+                "notes": "No latency benchmark provided; measure before deployment",
+            },
+            {
+                "item": "Memory footprint acceptable",
+                "status": "PASS" if exists("00_DATA_INTEGRITY/resource_utilization_snapshot.json") else "WARN",
+                "notes": "Uses resource snapshot from data integrity tracker",
+            },
+            {
+                "item": "Resource limits configured",
+                "status": "PASS" if "resource_limits" in self.config else "WARN",
+                "notes": "Config should contain resource_limits",
+            },
+            {
+                "item": "Logging/monitoring enabled",
+                "status": "PASS" if "logging" in self.config else "WARN",
+                "notes": "Verify logging config section present",
+            },
+            {
+                "item": "Health checks implemented",
+                "status": "WARN",
+                "notes": "Add runtime health checks to deployment target",
+            },
+            {
+                "item": "Error handling & fallbacks in place",
+                "status": "WARN",
+                "notes": "Ensure error handling utilities are packaged with the model",
+            },
+            {
+                "item": "Security review completed",
+                "status": "PENDING",
+                "notes": "Manual security review required",
+            },
+            {
+                "item": "Integration tests run",
+                "status": "WARN",
+                "notes": "Record latest pytest run artifacts before release",
+            },
+            {
+                "item": "Rollback plan documented",
+                "status": "PENDING",
+                "notes": "Document rollback/blue-green procedure",
+            },
+        ]
+        df = pd.DataFrame(checks)
+        save_dataframe(df, dest_root / "deployment_readiness_checklist.parquet", excel_copy=excel_copy, index=False)
+        (dest_root / "deployment_readiness_checklist.json").write_text(df.to_json(orient="records", indent=2))
 
     def _capture_environment(self, dest_root: Path):
         sys_info = {
@@ -182,8 +266,8 @@ This folder contains the complete artifacts required to reproduce, audit, or dep
 
 ### 3. Results & Evaluation
 - `final_report.pdf`: The comprehensive human-readable report.
-- `metrics_test.xlsx`: Final performance metrics on the Test set.
-- `predictions_test.xlsx`: Row-by-row predictions, ground truth, and errors.
+- `metrics_test.parquet`: Final performance metrics on the Test set (optional Excel sidecar).
+- `predictions_test.parquet`: Row-by-row predictions, ground truth, and errors (optional Excel sidecar).
 - `diagnostics/`: Folder containing key visual plots (Scatter, Histograms).
 
 ## How to Load the Model

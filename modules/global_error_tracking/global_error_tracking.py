@@ -5,6 +5,7 @@ import os
 import glob
 from pathlib import Path
 from typing import List, Dict, Any, Optional
+from utils.file_io import save_dataframe
 
 class GlobalErrorTrackingEngine:
     """
@@ -19,6 +20,7 @@ class GlobalErrorTrackingEngine:
         self.config = config
         self.logger = logger
         self.track_config = config.get('global_tracking', {})
+        self.excel_copy = self.config.get("outputs", {}).get("save_excel_copy", False)
         
     def compile_tracking_data(self, val_df: pd.DataFrame, test_df: pd.DataFrame, run_id: str):
         """
@@ -54,8 +56,7 @@ class GlobalErrorTrackingEngine:
         
         # Safe retrieval of Hs (The Physics Context)
         if hs_col in base_df.columns:
-            master_df = base_df[[hs_col]].copy()
-            master_df.rename(columns={hs_col: 'Hs'}, inplace=True)
+            master_df = base_df[[hs_col]].rename(columns={hs_col: 'Hs'})
         else:
             # Fallback if Hs column name doesn't match
             master_df = pd.DataFrame(index=base_df.index)
@@ -151,7 +152,7 @@ class GlobalErrorTrackingEngine:
         # Order: Index, Hs, Angle, FLAGS, METRICS, RAW DATA
         # Reset index to make 'row_index' a column again for final Excel output
         # FIX: Copy to defragment before reset_index to avoid fragmentation warning
-        master_df = master_df.copy().reset_index()
+        master_df = master_df.reset_index()
 
         metadata_cols = ['row_index', 'Hs', 'True_Angle']
         flag_cols = ['Is_Persistent_Failure', 'Failure_Rate_%', 'Min_Error', 'Mean_Error']
@@ -161,13 +162,13 @@ class GlobalErrorTrackingEngine:
         
         final_df = master_df[final_cols]
 
-        # 5. Save to Excel
-        save_path = output_dir / f"{set_name.capitalize()}_Set_Tracking.xlsx"
+        # 5. Save to Parquet (optional Excel copy)
+        save_path = output_dir / f"{set_name.capitalize()}_Set_Tracking.parquet"
         try:
-            final_df.to_excel(save_path, index=False)
+            save_dataframe(final_df, save_path, excel_copy=self.excel_copy, index=False)
             self.logger.info(f"Saved {set_name} Master Matrix: {save_path}")
         except Exception as e:
-            self.logger.error(f"Failed to save Excel matrix for {set_name}: {e}")
+            self.logger.error(f"Failed to save matrix for {set_name}: {e}")
 
     def track(self, round_predictions: List[pd.DataFrame], feature_history: List[Dict], run_id: str) -> Dict[str, Any]:
         if not self.track_config.get('enabled', True):
@@ -181,14 +182,14 @@ class GlobalErrorTrackingEngine:
         output_dir.mkdir(parents=True, exist_ok=True)
 
         evolution_df = self._build_evolution_matrix(round_predictions)
-        evolution_df.to_excel(output_dir / "error_evolution_matrix.xlsx", index=False)
+        save_dataframe(evolution_df, output_dir / "error_evolution_matrix.parquet", excel_copy=self.excel_copy, index=False)
 
         failure_threshold = self.track_config.get('failure_threshold', 5.0)
         error_cols = [col for col in evolution_df.columns if 'error' in col]
         
         persistent_mask = (evolution_df[error_cols] > failure_threshold).all(axis=1)
         persistent_df = evolution_df[persistent_mask][['row_index']]
-        persistent_df.to_excel(output_dir / "persistent_failures.xlsx", index=False)
+        save_dataframe(persistent_df, output_dir / "persistent_failures.parquet", excel_copy=self.excel_copy, index=False)
 
         breakpoints = []
         for i in range(len(error_cols) - 1):
@@ -212,7 +213,7 @@ class GlobalErrorTrackingEngine:
 
         if breakpoints:
             breakpoint_df = pd.DataFrame(breakpoints)
-            breakpoint_df.to_excel(output_dir / "breakpoint_analysis.xlsx", index=False)
+            save_dataframe(breakpoint_df, output_dir / "breakpoint_analysis.parquet", excel_copy=self.excel_copy, index=False)
 
         self.logger.info(f"Global tracking complete. Results in: {output_dir}")
         return {'output_dir': str(output_dir)}

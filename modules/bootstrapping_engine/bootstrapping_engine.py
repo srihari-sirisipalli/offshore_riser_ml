@@ -4,22 +4,28 @@ import logging
 import matplotlib.pyplot as plt
 from pathlib import Path
 from typing import Dict, Any, Optional
+from modules.base.base_engine import BaseEngine
+from utils.error_handling import handle_engine_errors
+from utils.file_io import save_dataframe
 
 from utils.circular_metrics import compute_cmae
 
-class BootstrappingEngine:
+class BootstrappingEngine(BaseEngine):
     """
     Performs bootstrapping analysis to estimate the confidence intervals 
     of the model's performance metrics.
     """
     
     def __init__(self, config: dict, logger: logging.Logger):
-        self.config = config
-        self.logger = logger
+        super().__init__(config, logger)
         self.boot_config = config.get('bootstrapping', {})
-        self.enabled = self.boot_config.get('enabled', True)
+        self.enabled = self.boot_config.get('enabled', False)
 
-    def bootstrap(self, predictions: pd.DataFrame, split_name: str, run_id: str) -> Dict[str, Any]:
+    def _get_engine_directory_name(self) -> str:
+        return "09_ADVANCED_ANALYTICS"
+
+    @handle_engine_errors("Bootstrapping")
+    def execute(self, predictions: pd.DataFrame, split_name: str, run_id: str) -> Dict[str, Any]:
         """
         Run bootstrapping on the predictions to generate confidence intervals for CMAE.
         """
@@ -34,8 +40,7 @@ class BootstrappingEngine:
         self.logger.info(f"Starting Bootstrapping analysis for {split_name}...")
 
         # 1. Setup Output Directory
-        base_dir = self.config.get('outputs', {}).get('base_results_dir', 'results')
-        output_dir = Path(base_dir) / "09_ADVANCED_ANALYTICS" / "bootstrapping" / split_name
+        output_dir = self.output_dir / "bootstrapping" / split_name
         output_dir.mkdir(parents=True, exist_ok=True)
 
         # 2. Configuration & Validation
@@ -102,10 +107,11 @@ class BootstrappingEngine:
             'confidence_level': [confidence],
             'n_bootstraps': [n_samples]
         })
-        stats.to_excel(output_dir / "bootstrap_ci.xlsx", index=False)
+        excel_copy = self.config.get("outputs", {}).get("save_excel_copy", False)
+        save_dataframe(stats, output_dir / "bootstrap_ci.parquet", excel_copy=excel_copy, index=False)
         
         samples_df = pd.DataFrame(metrics_list)
-        samples_df.to_excel(output_dir / "bootstrap_samples.xlsx", index=False)
+        save_dataframe(samples_df, output_dir / "bootstrap_samples.parquet", excel_copy=excel_copy, index=False)
 
 
         # 7. Visualize

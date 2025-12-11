@@ -1,4 +1,14 @@
-from .hpo_search_engine import HPOSearchEngine
-from ..model_factory import ModelFactory
+"""
+HPO Search Engine
+=================
 
-__all__ = ['HPOSearchEngine', 'ModelFactory']
+Responsibility:
+- Hyperparameter Optimization using Grid Search.
+- Cross-Validation with stratified sampling.
+- Snapshot generation for Global Error Tracking.
+- Memory-efficient processing of large configuration grids.
+"""
+
+from .hpo_search_engine import HPOSearchEngine
+
+__all__ = ['HPOSearchEngine']

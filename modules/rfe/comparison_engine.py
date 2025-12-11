@@ -3,6 +3,8 @@ import logging
 import json
 from pathlib import Path
 from typing import Dict, Any, Tuple
+from utils.file_io import save_dataframe
+from utils import constants
 
 class ComparisonEngine:
     """
@@ -11,13 +13,14 @@ class ComparisonEngine:
     Responsibilities:
     1. Calculate Deltas for all metrics (New - Baseline).
     2. Interpret Deltas (Improvement vs Degradation).
-    3. Generate 'delta_metrics.xlsx'.
+    3. Generate 'delta_metrics.parquet'.
     4. Generate 'improvement_summary.txt'.
     """
 
     def __init__(self, config: dict, logger: logging.Logger):
         self.config = config
         self.logger = logger
+        self.excel_copy = self.config.get("outputs", {}).get("save_excel_copy", False)
         
         # Define metric behavior
         # Lower is Better: Errors
@@ -44,7 +47,7 @@ class ComparisonEngine:
         """
         self.logger.info(f"Comparing Baseline vs Dropped Feature ('{dropped_feature_name}')...")
         
-        output_dir = round_dir / "06_COMPARISON"
+        output_dir = round_dir / constants.ROUND_COMPARISON_DIR
         output_dir.mkdir(parents=True, exist_ok=True)
 
         # 1. Calculate Deltas
@@ -91,7 +94,7 @@ class ComparisonEngine:
         )
         df_comparison = df_comparison.sort_values('sort_key').drop(columns='sort_key')
         
-        df_comparison.to_excel(output_dir / "delta_metrics.xlsx", index=False)
+        save_dataframe(df_comparison, output_dir / "delta_metrics.parquet", excel_copy=self.excel_copy, index=False)
 
         # 3. Generate Comprehensive Comparison Table (Val + Test for both models)
         self._generate_comprehensive_comparison_table(output_dir, baseline_metrics, dropped_metrics)
@@ -155,8 +158,8 @@ class ComparisonEngine:
             })
 
         df = pd.DataFrame(rows)
-        df.to_excel(output_dir / "comprehensive_model_comparison.xlsx", index=False)
-        self.logger.info(f"Generated comprehensive comparison table")
+        save_dataframe(df, output_dir / "comprehensive_model_comparison.parquet", excel_copy=self.excel_copy, index=False)
+        self.logger.info("Generated comprehensive comparison table")
 
     def _generate_summary_text(self, feature_name: str, flags: list, df: pd.DataFrame) -> str:
         """Creates a human-readable summary string."""
